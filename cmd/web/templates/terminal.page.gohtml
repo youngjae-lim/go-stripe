@@ -20,6 +20,7 @@ Virtual Terminal
   autocomplete="off"
   novalidate=""
 >
+  <!-- Amount field -->
   <div class="mb-3">
     <label for="amount" class="form-label">Amount</label>
     <input
@@ -31,6 +32,8 @@ Virtual Terminal
       autocomplete="amount-new"
     />
   </div>
+
+  <!-- Cardholder Name field -->
   <div class="mb-3">
     <label for="cardholder-name" class="form-label">Cardholder Name</label>
     <input
@@ -42,6 +45,8 @@ Virtual Terminal
       autocomplete="cardholder-name-new"
     />
   </div>
+
+  <!-- Cardholder Email field -->
   <div class="mb-3">
     <label for="cardholder-email" class="form-label">Cardholder Email</label>
     <input
@@ -54,15 +59,21 @@ Virtual Terminal
     />
   </div>
 
+  <!-- Stripe Credit Card field -->
   <div class="mb-3">
     <label for="card-element" class="form-label">Credit Card</label>
     <div id="card-element" class="form-control"></div>
-    <div class="alert-danger text-center py-3 d-none" id="card-errors" role="alert"></div>
+    <div
+      class="alert-danger text-center py-3 d-none"
+      id="card-errors"
+      role="alert"
+    ></div>
     <div class="alert-success text-center" id="card-success" role="alert"></div>
   </div>
 
   <hr />
 
+  <!-- Charge Card button -->
   <a
     href="javacript:void(0)"
     id="pay-button"
@@ -71,11 +82,18 @@ Virtual Terminal
     >Charge Card</a
   >
 
+  <!-- Spinner for processing payment -->
   <div id="processing-payment" class="text-center d-none">
     <div class="spinner-border text-primary" role="status">
       <span class="visually-hidden">Loading...</span>
     </div>
   </div>
+
+  <!-- hidden input fields -->
+  <input type="hidden" name="payment_intent" id="payment_intent" />
+  <input type="hidden" name="payment_method" id="payment_method" />
+  <input type="hidden" name="payment_amount" id="payment_amount" />
+  <input type="hidden" name="payment_currency" id="payment_currency" />
 </form>
 
 {{ end }}
@@ -87,31 +105,63 @@ Virtual Terminal
   let card
   let stripe
 
-  const cardMessages = document.getElementById("card-messages")
-  const payButton = document.getElementById("pay-button")
-  const processing = document.getElementById("processing-payment")
+  const cardMessages = document.getElementById('card-messages')
+  const payButton = document.getElementById('pay-button')
+  const processing = document.getElementById('processing-payment')
 
   stripe = Stripe(
     'pk_test_51HnT3NKRCPm2rpQHSAWwaYUM9wVfZBtbjgsONQC62JVZAB22bEpz3CigfriyscHaKZ9uhGzJaNccRKbMqoTpISJb008IPBwkWe',
   )
 
   function hidePayButton() {
-    payButton.classList.add("d-none")
-    processing.classList.remove("d-none")
+    payButton.classList.add('d-none')
+    processing.classList.remove('d-none')
   }
 
   // client-side form validation
+  // contruct a payload to be sent to the backend
+  // make a POST request to the backend
   function val() {
-    let form = document.getElementById("charge_form")
+    let form = document.getElementById('charge_form')
 
     if (form.checkValidity() === false) {
       this.event.preventDefault()
       this.event.stopPropagation()
-      form.classList.add("was-validated")
+      form.classList.add('was-validated')
       return
     }
-    form.classList.add("was-validated")
+    form.classList.add('was-validated')
     hidePayButton()
+
+    let amountToCharge = String(
+      parseFloat(document.getElementById('amount').value) * 100,
+    )
+
+    let payload = {
+      amount: amountToCharge,
+      currency: 'usd',
+    }
+
+    const requestOptions = {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'appliction/json',
+      },
+      body: JSON.stringify(payload),
+    }
+
+    fetch('http://localhost:4001/api/payment-intent', requestOptions)
+      .then((res) => res.text())
+      .then((res) => {
+        let data
+        try {
+          data = JSON.parse(res)
+          console.log(data)
+        } catch (err) {
+          console.log(err)
+        }
+      })
   }
 
   ;(function () {
