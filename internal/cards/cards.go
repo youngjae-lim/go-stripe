@@ -23,6 +23,8 @@ func (c *Card) Charge(currency string, amount int) (*stripe.PaymentIntent, strin
 	return c.CreatePaymentIntent(currency, amount)
 }
 
+// Create a PaymentIntent
+// https://stripe.com/docs/api/payment_intents/create
 func (c *Card) CreatePaymentIntent(currency string, amount int) (*stripe.PaymentIntent, string, error) {
 	stripe.Key = c.Secret
 
@@ -45,6 +47,8 @@ func (c *Card) CreatePaymentIntent(currency string, amount int) (*stripe.Payment
 	return pi, "", nil
 }
 
+// https://stripe.com/docs/api/errors/handling
+// https://stripe.com/docs/api/errors
 func cardErrorMessage(code stripe.ErrorCode) string {
 	msg := ""
 	switch code {
