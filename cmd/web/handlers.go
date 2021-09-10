@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/youngjae-lim/go-stripe/internal/cards"
 )
 
 // VirtualTerminal displays a virtual terminal to charge credit card
@@ -25,18 +26,46 @@ func (app *application) PaymentSucceeded(w http.ResponseWriter, r *http.Request)
 	// read posted data
 	cardHolder := r.Form.Get("cardholder_name")
 	email := r.Form.Get("cardholder_email")
-	paymentIntent := r.Form.Get("payment_intent")
+	paymentID := r.Form.Get("payment_id")
 	paymentMethod := r.Form.Get("payment_method")
 	paymentAmount := r.Form.Get("payment_amount")
 	paymentCurrency := r.Form.Get("payment_currency")
 
+	card := cards.Card{
+		Secret: app.config.stripe.secret,
+		Key:    app.config.stripe.key,
+	}
+
+	// Get the payment intent by payment id
+	pi, err := card.RetrievePaymentIntent(paymentID)
+	if err != nil {
+		app.errorLog.Println(err)
+		return
+	}
+
+	// Get the payment method details by payment id
+	pm, err := card.RetrievePaymentMethod(paymentMethod)
+	if err != nil {
+		app.errorLog.Println(err)
+		return
+	}
+
+	bankReturnCode := pi.Charges.Data[0].ID
+	lastFour := pm.Card.Last4
+	expiryMonth := pm.Card.ExpMonth
+	expiryYear := pm.Card.ExpYear
+
 	data := make(map[string]interface{})
 	data["cardholder"] = cardHolder
 	data["email"] = email
-	data["payment_intent"] = paymentIntent
+	data["payment_intent"] = paymentID
 	data["payment_method"] = paymentMethod
 	data["payment_amount"] = paymentAmount
 	data["payment_currency"] = paymentCurrency
+	data["last_four"] = lastFour
+	data["expiry_month"] = expiryMonth
+	data["expiry_year"] = expiryYear
+	data["bank_return_code"] = bankReturnCode
 
 	if err := app.renderTemplate(w, r, "succeeded", &templateData{Data: data}); err != nil {
 		app.errorLog.Println(err)
