@@ -8,6 +8,13 @@ import (
 	"github.com/youngjae-lim/go-stripe/internal/cards"
 )
 
+// Home displays a homepage
+func (app *application) Home(w http.ResponseWriter, r *http.Request) {
+	if err := app.renderTemplate(w, r, "home", &templateData{}); err != nil {
+		app.errorLog.Println(err)
+	}
+}
+
 // VirtualTerminal displays a virtual terminal to charge credit card
 func (app *application) VirtualTerminal(w http.ResponseWriter, r *http.Request) {
 	if err := app.renderTemplate(w, r, "terminal", &templateData{}, "stripe-js"); err != nil {
