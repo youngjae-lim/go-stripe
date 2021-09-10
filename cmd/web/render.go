@@ -28,6 +28,7 @@ var functions = template.FuncMap{
 	"formatCurrency": formatCurrency,
 }
 
+// formatCurrency takes widget.Price in cent to the price in dollar
 func formatCurrency(n int) string {
 	f := float32(n / 100)
 
@@ -48,7 +49,7 @@ func (app *application) addDefaultData(td *templateData, r *http.Request) *templ
 func (app *application) renderTemplate(w http.ResponseWriter, r *http.Request, page string, td *templateData, partials ...string) error {
 	var t *template.Template
 	var err error
-	
+
 	templateToRender := fmt.Sprintf("templates/%s.page.gohtml", page)
 
 	_, templateInMap := app.templateCache[templateToRender]

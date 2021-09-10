@@ -9,7 +9,7 @@
   const payButton = document.getElementById('pay-button')
   const processing = document.getElementById('processing-payment')
 
-  stripe = Stripe("{{ .StripePublishableKey }}")
+  stripe = Stripe('{{ .StripePublishableKey }}')
 
   function hidePayButton() {
     payButton.classList.add('d-none')
@@ -55,9 +55,8 @@
 
     // construct a payload with an integer amount
     // TODO: possible bug? parseFloat(19.99) * 100 yields 1998.99999999999998
-    let amountToCharge = String(
-      parseFloat(document.getElementById('amount').value) * 1000 / 10,
-    )
+    let amountToCharge = document.getElementById('amount').value
+    console.log('amountToCharge: ', amountToCharge)
 
     let payload = {
       amount: amountToCharge,
@@ -75,7 +74,7 @@
 
     // Make a POST request to the backend api to get a payment intent
     // https://stripe.com/docs/payments/intents
-    fetch("{{ .API }}/api/payment-intent", requestOptions)
+    fetch('{{ .API }}/api/payment-intent', requestOptions)
       .then((res) => res.text())
       .then((res) => {
         let data
@@ -173,4 +172,4 @@
     })
   })()
 </script>
-{{end}}
+{{ end }}

@@ -5,109 +5,127 @@ Virtual Terminal
 {{ end }}
 
 {{define "content"}}
-  <!-- Title of the page -->
-  <h2 class="mt-3 text-center">Virtual Terminal</h2>
+<!-- Title of the page -->
+<h2 class="mt-3 text-center">Virtual Terminal</h2>
+
+<hr />
+
+<!-- Messages for Stripe Card Confirmation Success/Failure -->
+<div class="alert alert-danger text-center d-none" id="card-messages"></div>
+
+<!-- Start of the Form -->
+<form
+  action="/payment-succeeded"
+  method="post"
+  name="charge_form"
+  id="charge_form"
+  class="d-block needs-validation charge-form"
+  autocomplete="off"
+  novalidate=""
+>
+  <!-- Amount field -->
+  <div class="mb-3">
+    <label for="charge_amount" class="form-label">Amount</label>
+    <input
+      type="number"
+      step="0.01"
+      class="form-control"
+      id="charge_amount"
+      required=""
+      autocomplete="charge_amount-new"
+    />
+  </div>
+
+  <!-- Cardholder Name field -->
+  <div class="mb-3">
+    <label for="cardholder_name" class="form-label">Cardholder Name</label>
+    <input
+      type="text"
+      class="form-control"
+      id="cardholder_name"
+      name="cardholder_name"
+      required=""
+      autocomplete="cardholder_name-new"
+    />
+  </div>
+
+  <!-- Cardholder Email field -->
+  <div class="mb-3">
+    <label for="cardholder_email" class="form-label">Cardholder Email</label>
+    <input
+      type="email"
+      class="form-control"
+      id="cardholder_email"
+      name="cardholder_email"
+      required=""
+      autocomplete="cardholder_email-new"
+    />
+  </div>
+
+  <!-- Stripe Credit Card field -->
+  <div class="mb-3">
+    <label for="card-element" class="form-label">Credit Card</label>
+    <!-- Stripe cardElement will be inserted here -->
+    <div id="card-element" class="form-control"></div>
+    <!-- Error message -->
+    <div
+      class="alert-danger text-center py-3 d-none"
+      id="card-errors"
+      role="alert"
+    ></div>
+    <!-- Success message -->
+    <div
+      class="alert-success text-center py-3 d-none"
+      id="card-success"
+      role="alert"
+    ></div>
+  </div>
 
   <hr />
 
-  <!-- Messages for Stripe Card Confirmation Success/Failure -->
-  <div class="alert alert-danger text-center d-none" id="card-messages"></div>
-
-  <!-- Start of the Form -->
-  <form
-    action="/payment-succeeded"
-    method="post"
-    name="charge_form"
-    id="charge_form"
-    class="d-block needs-validation charge-form"
-    autocomplete="off"
-    novalidate=""
+  <!-- Charge Card button -->
+  <a
+    href="javacript:void(0)"
+    id="pay-button"
+    class="btn btn-primary"
+    onclick="val()"
+    >Charge Card</a
   >
-    <!-- Amount field -->
-    <div class="mb-3">
-      <label for="amount" class="form-label">Amount</label>
-      <input
-        type="text"
-        class="form-control"
-        id="amount"
-        name="amount"
-        required=""
-        autocomplete="amount-new"
-      />
+
+  <!-- Spinner for processing payment -->
+  <div id="processing-payment" class="text-center d-none">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
     </div>
+  </div>
 
-    <!-- Cardholder Name field -->
-    <div class="mb-3">
-      <label for="cardholder_name" class="form-label">Cardholder Name</label>
-      <input
-        type="text"
-        class="form-control"
-        id="cardholder_name"
-        name="cardholder_name"
-        required=""
-        autocomplete="cardholder_name-new"
-      />
-    </div>
-
-    <!-- Cardholder Email field -->
-    <div class="mb-3">
-      <label for="cardholder_email" class="form-label">Cardholder Email</label>
-      <input
-        type="email"
-        class="form-control"
-        id="cardholder_email"
-        name="cardholder_email"
-        required=""
-        autocomplete="cardholder_email-new"
-      />
-    </div>
-
-    <!-- Stripe Credit Card field -->
-    <div class="mb-3">
-      <label for="card-element" class="form-label">Credit Card</label>
-      <!-- Stripe cardElement will be inserted here -->
-      <div id="card-element" class="form-control"></div>
-      <!-- Error message -->
-      <div
-        class="alert-danger text-center py-3 d-none"
-        id="card-errors"
-        role="alert"
-      ></div>
-      <!-- Success message -->
-      <div
-        class="alert-success text-center py-3 d-none"
-        id="card-success"
-        role="alert"
-      ></div>
-    </div>
-
-    <hr />
-
-    <!-- Charge Card button -->
-    <a
-      href="javacript:void(0)"
-      id="pay-button"
-      class="btn btn-primary"
-      onclick="val()"
-      >Charge Card</a
-    >
-
-    <!-- Spinner for processing payment -->
-    <div id="processing-payment" class="text-center d-none">
-      <div class="spinner-border text-primary" role="status">
-        <span class="visually-hidden">Loading...</span>
-      </div>
-    </div>
-
-    <!-- Hidden input fields -->
-    <input type="hidden" name="payment_intent" id="payment_intent" />
-    <input type="hidden" name="payment_method" id="payment_method" />
-    <input type="hidden" name="payment_amount" id="payment_amount" />
-    <input type="hidden" name="payment_currency" id="payment_currency" />
-  </form>
-  <!-- End of the Form -->
+  <!-- Hidden input fields -->
+  <input type="hidden" name="amount" id="amount" />
+  <input type="hidden" name="payment_intent" id="payment_intent" />
+  <input type="hidden" name="payment_method" id="payment_method" />
+  <input type="hidden" name="payment_amount" id="payment_amount" />
+  <input type="hidden" name="payment_currency" id="payment_currency" />
+</form>
+<!-- End of the Form -->
 {{ end }}
 
 {{define "js"}}
-  {{template "stripe-js" .}}
+<script>
+  const chargeAmount = document.getElementById('charge_amount')
+
+  chargeAmount.addEventListener('input', convertToCent)
+
+  function convertToCent(evt) {
+    console.log('evt.target.value: ', evt.target.value)
+
+    if (evt.target.value !== '') {
+      document.getElementById('amount').value = String(
+        (parseFloat(evt.target.value) * 1000) / 10,
+      )
+    } else {
+      document.getElementById('amount').value = 0
+    }
+  }
+</script>
+{{template "stripe-js" .}}
 {{ end }}
