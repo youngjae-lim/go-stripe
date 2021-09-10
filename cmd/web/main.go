@@ -8,6 +8,9 @@ import (
 	"net/http"
 	"os"
 	"time"
+
+	"github.com/youngjae-lim/go-stripe/internal/driver"
+	"github.com/youngjae-lim/go-stripe/internal/models"
 )
 
 const version = "1.0.0"
@@ -32,6 +35,7 @@ type application struct {
 	errorLog      *log.Logger
 	templateCache map[string]*template.Template
 	version       string
+	DB            models.DBModel
 }
 
 func (app *application) serve() error {
@@ -55,14 +59,28 @@ func main() {
 	flag.IntVar(&cfg.port, "port", 4000, "Server port to listen on")
 	flag.StringVar(&cfg.env, "env", "development", "{development|production}")
 	flag.StringVar(&cfg.api, "api", "http://localhost:4001", "URL to api")
+	// parseTime=true enables the output type of DATE and DATETIME values to time.Time instead of []byte string
+	// tls=false disables TLS/SSL encrypted connection to the server
+	flag.StringVar(&cfg.db.dsn, "dsn", "youngjaelim:@tcp(localhost:3306)/widgets?parseTime=true&tls=false", "DSN")
 
 	flag.Parse()
 
+	// Please make sure to set STRIPE_KEY in the .air.toml file
+	// if you want to run the app with air for live-loading
+	// key & secret are set in Makefile as well so we can still grab them
+	// when not using air
 	cfg.stripe.key = os.Getenv("STRIPE_KEY")
 	cfg.stripe.secret = os.Getenv("STRIPE_SECRET")
 
 	infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
 	errorLog := log.New(os.Stdout, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
+
+	// connect to database
+	conn, err := driver.OpenDB(cfg.db.dsn)
+	if err != nil {
+		errorLog.Fatal(err)
+	}
+	defer conn.Close()
 
 	tc := make(map[string]*template.Template)
 
@@ -72,9 +90,10 @@ func main() {
 		errorLog:      errorLog,
 		templateCache: tc,
 		version:       version,
+		DB:            models.DBModel{DB: conn},
 	}
 
-	err := app.serve()
+	err = app.serve()
 	if err != nil {
 		app.errorLog.Println(err)
 		log.Fatal(err)

@@ -1,0 +1,176 @@
+{{define "stripe-js"}}
+<script src="https://js.stripe.com/v3/"></script>
+
+<script>
+  let card
+  let stripe
+
+  const cardMessages = document.getElementById('card-messages')
+  const payButton = document.getElementById('pay-button')
+  const processing = document.getElementById('processing-payment')
+
+  stripe = Stripe("{{ .StripePublishableKey }}")
+
+  function hidePayButton() {
+    payButton.classList.add('d-none')
+    processing.classList.remove('d-none')
+  }
+
+  function showPayButton() {
+    payButton.classList.remove('d-none')
+    processing.classList.add('d-none')
+  }
+
+  function showCardError(msg) {
+    cardMessages.classList.add('alert-danger')
+    cardMessages.classList.remove('alert-success')
+    cardMessages.classList.remove('d-none')
+    cardMessages.innerText = msg
+  }
+
+  function showCardSuccess() {
+    cardMessages.classList.add('alert-success')
+    cardMessages.classList.remove('alert-danger')
+    cardMessages.classList.remove('d-none')
+    cardMessages.innerText = 'Transaction successful'
+  }
+
+  // client-side form validation
+  // contruct a payload to be sent to the backend
+  // make a POST request to the backend
+  // confirm the card payment with Stripe
+  // submit the form to generate a receipt upon the successful transaction
+  function val() {
+    // client-side form validation
+    let form = document.getElementById('charge_form')
+
+    if (form.checkValidity() === false) {
+      this.event.preventDefault()
+      this.event.stopPropagation()
+      form.classList.add('was-validated')
+      return
+    }
+    form.classList.add('was-validated')
+    hidePayButton()
+
+    // construct a payload with an integer amount
+    // TODO: possible bug? parseFloat(19.99) * 100 yields 1998.99999999999998
+    let amountToCharge = String(
+      parseFloat(document.getElementById('amount').value) * 1000 / 10,
+    )
+
+    let payload = {
+      amount: amountToCharge,
+      currency: 'usd',
+    }
+
+    const requestOptions = {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'appliction/json',
+      },
+      body: JSON.stringify(payload),
+    }
+
+    // Make a POST request to the backend api to get a payment intent
+    // https://stripe.com/docs/payments/intents
+    fetch("{{ .API }}/api/payment-intent", requestOptions)
+      .then((res) => res.text())
+      .then((res) => {
+        let data
+        try {
+          data = JSON.parse(res)
+
+          console.log('data from backend api: ', data)
+          console.log('cardElement: ', card)
+
+          // confirm card payment with Stripe
+          // note that payment_method is required to confirm the payment
+          // stripe.confirmCardPayment will return a Promise which resolves with a result object. The object has either:
+          //    - result.paymentIntent (https://stripe.com/docs/api/payment_intents/object)
+          //    - result.error
+          // https://stripe.com/docs/js/payment_intents/confirm_card_payment
+          // https://stripe.com/docs/api/payment_methods
+          stripe
+            .confirmCardPayment(data.client_secret, {
+              payment_method: {
+                card: card,
+                billing_details: {
+                  name: document.getElementById('cardholder_name').value,
+                },
+              },
+            })
+            .then(function (result) {
+              // handle result.error and result.paymentIntent
+              console.log('result from stripe.confirmCardPayment: ', result)
+
+              if (result.error) {
+                // card declined, or something went wrong with the card
+                showCardError(result.error.message)
+                showPayButton()
+              } else if (result.paymentIntent) {
+                if (result.paymentIntent.status === 'succeeded') {
+                  // we have charged the card successfully at this point
+
+                  // store some information to the hidden input values to be used to submit the form
+                  document.getElementById('payment_intent').value =
+                    result.paymentIntent.id
+                  document.getElementById('payment_method').value =
+                    result.paymentIntent.payment_method_types[0]
+                  document.getElementById('payment_amount').value =
+                    result.paymentIntent.amount
+                  document.getElementById('payment_currency').value =
+                    result.paymentIntent.currency
+
+                  // hide the processing spinner and show the charge card button again
+                  processing.classList.add('d-none')
+                  showCardSuccess()
+
+                  // would submit the form at this point
+                  document.getElementById('charge_form').submit()
+                }
+              }
+            })
+        } catch (err) {
+          console.log(err)
+          showCardError('Invalid response from payment gateway!')
+          showPayButton()
+        }
+      })
+  }
+
+  // This function is self-excuted to load a Stripe card element when loading a page
+  ;(function () {
+    // create stripe & elements
+    const elements = stripe.elements()
+    const style = {
+      base: {
+        fontSize: '16px',
+        lineHeight: '24px',
+      },
+    }
+
+    // create card entry
+    card = elements.create('card', {
+      style: style,
+      hidePostalCode: false,
+    })
+
+    // mount the card element
+    card.mount('#card-element')
+
+    // check for input errors
+    card.addEventListener('change', function (event) {
+      var displayError = document.getElementById('card-errors')
+      if (event.error) {
+        displayError.classList.remove('d-none')
+        displayError.textContent = event.error.message
+      } else {
+        displayError.classList.add('d-none')
+        displayError.textContent = ''
+      }
+    })
+  })()
+</script>
+{{end}}
