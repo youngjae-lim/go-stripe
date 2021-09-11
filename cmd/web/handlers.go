@@ -306,3 +306,21 @@ func (app *application) ChargeOnce(w http.ResponseWriter, r *http.Request) {
 		app.errorLog.Println(err)
 	}
 }
+
+func (app *application) BronzePlan(w http.ResponseWriter, r *http.Request) {
+	// Get a monthly planed widget
+	// id = 2 is hardcoded for now due to only one subscription-based plan available
+	widget, err := app.DB.GetWidget(2)
+	if err != nil {
+		app.errorLog.Println(err)
+		return
+	}
+
+	data := make(map[string]interface{})
+	data["widget"] = widget
+
+	// render the template
+	if err := app.renderTemplate(w, r, "bronze-plan", &templateData{Data: data}); err != nil {
+		app.errorLog.Println(err)
+	}
+}

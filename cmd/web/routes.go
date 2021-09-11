@@ -10,16 +10,23 @@ func (app *application) routes() http.Handler {
 	mux := chi.NewRouter()
 	mux.Use(SessionLoad)
 
+	// Home
 	mux.Get("/", app.Home)
-	
+
+	// Virtual Terminal
 	mux.Get("/virtual-terminal", app.VirtualTerminal)
 	mux.Post("/virtual-terminal-payment-succeeded", app.VirtualTerminalPaymentSucceeded)
 	mux.Get("/virtual-terminal-receipt", app.VirtualTerminalReceipt)
 
+	// Sell a Single Widget
 	mux.Get("/widget/{id}", app.ChargeOnce)
 	mux.Post("/payment-succeeded", app.PaymentSucceeded)
 	mux.Get("/receipt", app.Receipt)
 
+	// Monthly Subscription
+	mux.Get("/plans/bronze", app.BronzePlan)
+
+	// File server for static assest
 	fileServer := http.FileServer(http.Dir("./static/"))
 	mux.Handle("/static/*", http.StripPrefix("/static", fileServer))
 
