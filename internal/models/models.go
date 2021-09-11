@@ -138,8 +138,8 @@ func (m *DBModel) InsertTransaction(txn Transaction) (int, error) {
 
 	stmt := `
 		insert into transactions
-						(amount, currency, last_four, bank_return_code, transaction_status_id, created_at, updated_at)
-		values (?, ?, ?, ?, ?, ?, ?)
+						(amount, currency, last_four, bank_return_code, transaction_status_id, expiry_month, expiry_year, created_at, updated_at)
+		values (?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`
 
 	result, err := m.DB.ExecContext(ctx, stmt,
@@ -148,6 +148,8 @@ func (m *DBModel) InsertTransaction(txn Transaction) (int, error) {
 		txn.LastFour,
 		txn.BankReturnCode,
 		txn.TransactionStatusID,
+		txn.ExpiryMonth,
+		txn.ExpiryYear,
 		time.Now(),
 		time.Now(),
 	)
@@ -171,13 +173,14 @@ func (m *DBModel) InsertOrder(order Order) (int, error) {
 
 	stmt := `
 		insert into orders
-						(widget_id, transaction_id, status_id, quantity, amount, created_at, updated_at)
-		values (?, ?, ?, ?, ?, ?, ?)
+						(widget_id, transaction_id, customer_id, status_id, quantity, amount, created_at, updated_at)
+		values (?, ?, ?, ?, ?, ?, ?, ?)
 	`
 
 	result, err := m.DB.ExecContext(ctx, stmt,
 		order.WidgetID,
 		order.TransactionID,
+		order.CustomerID,
 		order.StatusID,
 		order.Quantity,
 		order.Amount,
@@ -196,7 +199,6 @@ func (m *DBModel) InsertOrder(order Order) (int, error) {
 
 	return int(id), nil
 }
-
 
 // InsertCustomer inserts a new customer, and return its id
 func (m *DBModel) InsertCustomer(c Customer) (int, error) {
