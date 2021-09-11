@@ -15,7 +15,7 @@ Virtual Terminal
 
 <!-- Start of the Form -->
 <form
-  action="/payment-succeeded"
+  action="/virtual-terminal-payment-succeeded"
   method="post"
   name="charge_form"
   id="charge_form"
@@ -113,14 +113,14 @@ Virtual Terminal
 <script>
   const chargeAmount = document.getElementById('charge_amount')
 
-  chargeAmount.addEventListener('input', convertToCent)
+  chargeAmount.addEventListener('change', convertToCent)
 
   function convertToCent(evt) {
     console.log('evt.target.value: ', evt.target.value)
 
     if (evt.target.value !== '') {
       document.getElementById('amount').value = String(
-        (parseFloat(evt.target.value) * 1000) / 10,
+        parseInt((evt.target.value * 1000 / 10), 10)
       )
     } else {
       document.getElementById('amount').value = 0

@@ -175,6 +175,41 @@ func (app *application) PaymentSucceeded(w http.ResponseWriter, r *http.Request)
 	http.Redirect(w, r, "/receipt", http.StatusSeeOther)
 }
 
+// VirtualTerminalPaymentSucceeded displays the confirmation page for virtual terminal transaction
+func (app *application) VirtualTerminalPaymentSucceeded(w http.ResponseWriter, r *http.Request) {
+	// get the transaction data
+	txnData, err := app.GetTransactionData(r)
+	if err != nil {
+		app.errorLog.Println(err)
+		return
+	}
+
+	// create a new transaction
+	txn := models.Transaction{
+		Amount:              txnData.PaymentAmount,
+		Currency:            txnData.PaymentCurrency,
+		LastFour:            txnData.LastFour,
+		BankReturnCode:      txnData.BankReturnCode,
+		TransactionStatusID: 2,
+		ExpiryMonth:         txnData.ExpiryMonth,
+		ExpiryYear:          txnData.ExpiryYear,
+		PaymentIntent:       txnData.PaymentIntentID,
+		PaymentMethod:       txnData.PaymentMethodID,
+	}
+
+	// save the transaction
+	_, err = app.SaveTransaction(txn)
+	if err != nil {
+		app.errorLog.Println(err)
+		return
+	}
+
+	// write transaction data to session, and then redirect the user to new page
+	// to avoid posting data twice
+	app.Session.Put(r.Context(), "receipt", txnData)
+	http.Redirect(w, r, "/virtual-terminal-receipt", http.StatusSeeOther)
+}
+
 func (app *application) Receipt(w http.ResponseWriter, r *http.Request) {
 	// retrieve receipt data from session
 	txn, ok := app.Session.Get(r.Context(), "receipt").(TransanctionData)
@@ -185,12 +220,32 @@ func (app *application) Receipt(w http.ResponseWriter, r *http.Request) {
 	}
 	data := make(map[string]interface{})
 	data["txn"] = txn
-	
+
 	// once retrieved, remove receipt data from session
 	app.Session.Remove(r.Context(), "receipt")
 
 	// render receipt.page.gohtml
 	if err := app.renderTemplate(w, r, "receipt", &templateData{Data: data}); err != nil {
+		app.errorLog.Println(err)
+	}
+}
+
+func (app *application) VirtualTerminalReceipt(w http.ResponseWriter, r *http.Request) {
+	// retrieve receipt data from session
+	txn, ok := app.Session.Get(r.Context(), "receipt").(TransanctionData)
+	if !ok {
+		app.errorLog.Println("can't get data from session")
+		// redirect to homepage, for example, when the receipt page is refreshed
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+	}
+	data := make(map[string]interface{})
+	data["txn"] = txn
+
+	// once retrieved, remove receipt data from session
+	app.Session.Remove(r.Context(), "receipt")
+
+	// render receipt.page.gohtml
+	if err := app.renderTemplate(w, r, "virtual-terminal-receipt", &templateData{Data: data}); err != nil {
 		app.errorLog.Println(err)
 	}
 }
