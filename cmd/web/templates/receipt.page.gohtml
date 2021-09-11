@@ -1,11 +1,11 @@
 {{template "base" .}}
 
 {{define "title"}}
-Payment Succeeded!
+Receipt
 {{ end }}
 
 {{define "content"}}
-<h2 class="mt-5">Payment Succeeded</h2>
+<h2 class="mt-5">Receipt</h2>
 <hr />
 <p>Payment Intent: {{ index .Data "payment_intent" }}</p>
 <p>

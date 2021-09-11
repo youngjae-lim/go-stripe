@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/gob"
 	"flag"
 	"fmt"
 	"html/template"
@@ -58,6 +59,9 @@ func (app *application) serve() error {
 }
 
 func main() {
+	// To encode/decode a map[string]interface{}, since the field of the map is enclosed as interface type, we need to register the specific type in advance
+	gob.Register(map[string]interface{}{})
+	
 	var cfg config
 
 	flag.IntVar(&cfg.port, "port", 4000, "Server port to listen on")

@@ -134,9 +134,24 @@ func (app *application) PaymentSucceeded(w http.ResponseWriter, r *http.Request)
 	data["bank_return_code"] = bankReturnCode
 
 	// should write this data to session, and then redirect the user to new page
+	// to avoid posting data twice
+	app.Session.Put(r.Context(), "receipt", data)
+	http.Redirect(w, r, "/receipt", http.StatusSeeOther)
+}
 
-	// render succeeded.page.gohtml
-	if err := app.renderTemplate(w, r, "succeeded", &templateData{Data: data}); err != nil {
+func (app *application) Receipt(w http.ResponseWriter, r *http.Request) {
+	// retrieve receipt data from session
+	data, ok := app.Session.Get(r.Context(), "receipt").(map[string]interface{})
+	if !ok {
+		app.errorLog.Println("can't get data from session")
+		// redirect to homepage, for example, when the receipt page is refreshed
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+	}
+	// once retrieved, remove receipt data from session
+	app.Session.Remove(r.Context(), "receipt")
+
+	// render receipt.page.gohtml
+	if err := app.renderTemplate(w, r, "receipt", &templateData{Data: data}); err != nil {
 		app.errorLog.Println(err)
 	}
 }
