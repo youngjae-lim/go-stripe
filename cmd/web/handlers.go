@@ -91,6 +91,8 @@ func (app *application) PaymentSucceeded(w http.ResponseWriter, r *http.Request)
 		TransactionStatusID: 2,
 		ExpiryMonth:         int(expiryMonth),
 		ExpiryYear:          int(expiryYear),
+		PaymentIntent:       paymentID,
+		PaymentMethod:       paymentMethod,
 	}
 
 	// save the transaction
