@@ -21,5 +21,7 @@ func (app *application) routes() http.Handler {
 	mux.Post("/api/payment-intent", app.GetPaymentIntent)
 	mux.Get("/api/widget/{id}", app.GetWidgetByID)
 
+	mux.Post("/api/subscribe", app.SubscribeToPlan)
+
 	return mux
 }

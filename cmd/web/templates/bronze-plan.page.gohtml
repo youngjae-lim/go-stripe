@@ -2,20 +2,22 @@
 
 {{define "title"}}
 Bronze Plan
-{{end}}
+{{ end }}
 
 {{define "content"}}
 {{$widget := index .Data "widget"}}
 
-  <h2 class="mt-3 text-center">{{ $widget.Name }}: {{ formatCurrency $widget.Price }}</h2>
-  <p class="text-center">{{$widget.Description}}</p>
-  <hr>
+<h2 class="mt-3 text-center">
+  {{ $widget.Name }}: {{ formatCurrency $widget.Price }}
+</h2>
+<p class="text-center">{{ $widget.Description }}</p>
+<hr />
 
-  <!-- Messages for Stripe Card Confirmation Success/Failure -->
-  <div class="alert alert-danger text-center d-none" id="card-messages"></div>
+<!-- Messages for Stripe Card Confirmation Success/Failure -->
+<div class="alert alert-danger text-center d-none" id="card-messages"></div>
 
-  <!-- Start of the Form -->
-  <form
+<!-- Start of the Form -->
+<form
   action="/payment-succeeded-temp"
   method="post"
   name="charge_form"
@@ -23,105 +25,246 @@ Bronze Plan
   class="d-block needs-validation charge-form"
   autocomplete="off"
   novalidate=""
+>
+  <!-- Hidden fields: widget id, price -->
+  <input type="hidden" name="product_id" value="{{ $widget.ID }}" />
+  <input type="hidden" name="amount" id="amount" value="{{ $widget.Price }}" />
+
+  <!-- Cardholder First Name field -->
+  <div class="mb-3">
+    <label for="first_name" class="form-label">First Name</label>
+    <input
+      type="text"
+      class="form-control"
+      id="first_name"
+      name="first_name"
+      required=""
+      autocomplete="first_name-new"
+    />
+  </div>
+
+  <!-- Cardholder Last Name field -->
+  <div class="mb-3">
+    <label for="last_name" class="form-label">Last Name</label>
+    <input
+      type="text"
+      class="form-control"
+      id="last_name"
+      name="last_name"
+      required=""
+      autocomplete="last_name-new"
+    />
+  </div>
+
+  <!-- Cardholder Email field -->
+  <div class="mb-3">
+    <label for="cardholder_email" class="form-label">Email</label>
+    <input
+      type="email"
+      class="form-control"
+      id="cardholder_email"
+      name="cardholder_email"
+      required=""
+      autocomplete="cardholder_email-new"
+    />
+  </div>
+
+  <!-- Cardholder Name field -->
+  <div class="mb-3">
+    <label for="cardholder_name" class="form-label">Name on Card</label>
+    <input
+      type="text"
+      class="form-control"
+      id="cardholder_name"
+      name="cardholder_name"
+      required=""
+      autocomplete="cardholder_name-new"
+    />
+  </div>
+
+  <!-- Stripe Credit Card field -->
+  <div class="mb-3">
+    <label for="card-element" class="form-label">Credit Card</label>
+    <!-- Stripe cardElement will be inserted here -->
+    <div id="card-element" class="form-control"></div>
+    <!-- Error message -->
+    <div
+      class="alert-danger text-center py-3 d-none"
+      id="card-errors"
+      role="alert"
+    ></div>
+    <!-- Success message -->
+    <div
+      class="alert-success text-center py-3 d-none"
+      id="card-success"
+      role="alert"
+    ></div>
+  </div>
+
+  <hr />
+
+  <!-- Charge Card button -->
+  <a
+    href="javacript:void(0)"
+    id="pay-button"
+    class="btn btn-primary"
+    onclick="val()"
+    >Pay {{ formatCurrency $widget.Price }}/month</a
   >
-    <!-- Hidden fields: widget id, price -->
-    <input type="hidden" name="product_id" value="{{$widget.ID}}">
-    <input type="hidden" name="amount" id="amount" value="{{$widget.Price}}">
 
-    <!-- Cardholder First Name field -->
-    <div class="mb-3">
-      <label for="first_name" class="form-label">First Name</label>
-      <input
-        type="text"
-        class="form-control"
-        id="first_name"
-        name="first_name"
-        required=""
-        autocomplete="first_name-new"
-      />
+  <!-- Spinner for processing payment -->
+  <div id="processing-payment" class="text-center d-none">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
     </div>
+  </div>
 
-    <!-- Cardholder Last Name field -->
-    <div class="mb-3">
-      <label for="last_name" class="form-label">Last Name</label>
-      <input
-        type="text"
-        class="form-control"
-        id="last_name"
-        name="last_name"
-        required=""
-        autocomplete="last_name-new"
-      />
-    </div>
+  <!-- Hidden input fields -->
+  <input type="hidden" name="payment_id" id="payment_id" />
+  <input type="hidden" name="payment_method" id="payment_method" />
+  <input type="hidden" name="payment_amount" id="payment_amount" />
+  <input type="hidden" name="payment_currency" id="payment_currency" />
+</form>
+<!-- End of the Form -->
+{{ end }}
 
-    <!-- Cardholder Email field -->
-    <div class="mb-3">
-      <label for="cardholder_email" class="form-label">Email</label>
-      <input
-        type="email"
-        class="form-control"
-        id="cardholder_email"
-        name="cardholder_email"
-        required=""
-        autocomplete="cardholder_email-new"
-      />
-    </div>
+{{define "js"}}
+{{$widget := index .Data "widget"}}
+<script src="https://js.stripe.com/v3/"></script>
 
-    <!-- Cardholder Name field -->
-    <div class="mb-3">
-      <label for="cardholder_name" class="form-label">Name on Card</label>
-      <input
-        type="text"
-        class="form-control"
-        id="cardholder_name"
-        name="cardholder_name"
-        required=""
-        autocomplete="cardholder_name-new"
-      />
-    </div>
+<script>
+  let card
+  let stripe
 
-    <!-- Stripe Credit Card field -->
-    <div class="mb-3">
-      <label for="card-element" class="form-label">Credit Card</label>
-      <!-- Stripe cardElement will be inserted here -->
-      <div id="card-element" class="form-control"></div>
-      <!-- Error message -->
-      <div
-        class="alert-danger text-center py-3 d-none"
-        id="card-errors"
-        role="alert"
-      ></div>
-      <!-- Success message -->
-      <div
-        class="alert-success text-center py-3 d-none"
-        id="card-success"
-        role="alert"
-      ></div>
-    </div>
+  const cardMessages = document.getElementById('card-messages')
+  const payButton = document.getElementById('pay-button')
+  const processing = document.getElementById('processing-payment')
 
-    <hr />
+  stripe = Stripe('{{ .StripePublishableKey }}')
 
-    <!-- Charge Card button -->
-    <a
-      href="javacript:void(0)"
-      id="pay-button"
-      class="btn btn-primary"
-      onclick="val()"
-      >Pay {{ formatCurrency $widget.Price }}/month</a
-    >
+  function hidePayButton() {
+    payButton.classList.add('d-none')
+    processing.classList.remove('d-none')
+  }
 
-    <!-- Spinner for processing payment -->
-    <div id="processing-payment" class="text-center d-none">
-      <div class="spinner-border text-primary" role="status">
-        <span class="visually-hidden">Loading...</span>
-      </div>
-    </div>
+  function showPayButton() {
+    payButton.classList.remove('d-none')
+    processing.classList.add('d-none')
+  }
 
-    <!-- Hidden input fields -->
-    <input type="hidden" name="payment_id" id="payment_id" />
-    <input type="hidden" name="payment_method" id="payment_method" />
-    <input type="hidden" name="payment_amount" id="payment_amount" />
-    <input type="hidden" name="payment_currency" id="payment_currency" />
-  </form>
-  <!-- End of the Form -->
-{{end}}
+  function showCardError(msg) {
+    cardMessages.classList.add('alert-danger')
+    cardMessages.classList.remove('alert-success')
+    cardMessages.classList.remove('d-none')
+    cardMessages.innerText = msg
+  }
+
+  function showCardSuccess() {
+    cardMessages.classList.add('alert-success')
+    cardMessages.classList.remove('alert-danger')
+    cardMessages.classList.remove('d-none')
+    cardMessages.innerText = 'Transaction successful'
+  }
+
+  function val() {
+    // client-side form validation
+    let form = document.getElementById('charge_form')
+
+    if (form.checkValidity() === false) {
+      this.event.preventDefault()
+      this.event.stopPropagation()
+      form.classList.add('was-validated')
+      return
+    }
+    form.classList.add('was-validated')
+    hidePayButton()
+
+    // construct a payload with an integer amount
+    // TODO: possible bug? parseFloat(19.99) * 100 yields 1998.99999999999998
+    let amountToCharge = document.getElementById('amount').value
+
+    // call stripe api to create a new payment method
+    stripe
+      .createPaymentMethod({
+        type: 'card',
+        card: card,
+        billing_details: {
+          email: document.getElementById('cardholder_email').value,
+        },
+      })
+      .then(stripePaymentMethodHandler)
+  }
+
+  function stripePaymentMethodHandler(result) {
+    // handle result.error or result.paymentMethod returned from stripe.createPaymentMethod
+    if (result.error) {
+      showCardError(result.error.message)
+      showPayButton()
+    } else {
+      // construct to payload to be sent to the backend api
+      let payload = {
+        plan_id: '{{$widget.PlanID}}',
+        payment_method: result.paymentMethod.id,
+        email: document.getElementById('cardholder_email').value,
+        last_four: result.paymentMethod.card.last4,
+      }
+
+      // construct http POST request options
+      const requestOptions = {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'appliction/json',
+        },
+        body: JSON.stringify(payload),
+      }
+
+      // call backend api to create a new customer and subscribe to plan
+      fetch('{{ .API }}/api/subscribe', requestOptions)
+        .then((res) => res.json())
+        .then(function (data) {
+          console.log(data)
+          // hide processing message
+          processing.classList.add("d-none")
+
+          // set hidden input variables for the form
+
+          // submit the form
+        })
+    }
+  }
+
+  // This function is self-excuted to load a Stripe card element when loading a page
+  ;(function () {
+    // create stripe & elements
+    const elements = stripe.elements()
+    const style = {
+      base: {
+        fontSize: '16px',
+        lineHeight: '24px',
+      },
+    }
+
+    // create card entry
+    card = elements.create('card', {
+      style: style,
+      hidePostalCode: false,
+    })
+
+    // mount the card element
+    card.mount('#card-element')
+
+    // check for input errors
+    card.addEventListener('change', function (event) {
+      var displayError = document.getElementById('card-errors')
+      if (event.error) {
+        displayError.classList.remove('d-none')
+        displayError.textContent = event.error.message
+      } else {
+        displayError.classList.add('d-none')
+        displayError.textContent = ''
+      }
+    })
+  })()
+</script>
+{{ end }}
