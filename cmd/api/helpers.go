@@ -7,6 +7,27 @@ import (
 	"net/http"
 )
 
+// WriteJSON writes arbitrary data out as JSON
+func (app *application) WriteJSON(w http.ResponseWriter, status int, data interface{}, headers ...http.Header) error {
+	out, err := json.MarshalIndent(data, "", "\t")
+	if err != nil {
+		return err
+	}
+
+	if len(headers) > 0 {
+		for k, v := range headers[0] {
+			w.Header()[k] = v
+		}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	w.Write(out)
+
+	return nil
+}
+
+// ReadJSON reads arbitrary JSON into data
 func (app *application) ReadJSON(w http.ResponseWriter, r *http.Request, data interface{}) error {
 	maxBytes := 1048576
 
