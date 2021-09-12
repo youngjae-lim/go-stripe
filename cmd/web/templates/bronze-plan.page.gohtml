@@ -27,7 +27,12 @@ Bronze Plan
   novalidate=""
 >
   <!-- Hidden fields: widget id, price -->
-  <input type="hidden" name="product_id" value="{{ $widget.ID }}" />
+  <input
+    type="hidden"
+    name="product_id"
+    id="product_id"
+    value="{{ $widget.ID }}"
+  />
   <input type="hidden" name="amount" id="amount" value="{{ $widget.Price }}" />
 
   <!-- Cardholder First Name field -->
@@ -203,10 +208,17 @@ Bronze Plan
     } else {
       // construct to payload to be sent to the backend api
       let payload = {
+        product_id: document.getElementById('product_id').value,
         price_id: '{{$widget.PriceID}}',
         payment_method: result.paymentMethod.id,
         email: document.getElementById('cardholder_email').value,
         last_four: result.paymentMethod.card.last4,
+        card_brand: result.paymentMethod.card.brand,
+        expiry_month: result.paymentMethod.card.exp_month,
+        expiry_year: result.paymentMethod.card.exp_year,
+        first_name: document.getElementById('first_name').value,
+        last_name: document.getElementById('last_name').value,
+        amount: document.getElementById('amount').value,
       }
 
       // construct http POST request options
@@ -225,7 +237,7 @@ Bronze Plan
         .then(function (data) {
           console.log(data)
           // hide processing message
-          processing.classList.add("d-none")
+          processing.classList.add('d-none')
 
           // set hidden input variables for the form
 

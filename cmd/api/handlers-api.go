@@ -6,7 +6,9 @@ import (
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/stripe/stripe-go/v72"
 	"github.com/youngjae-lim/go-stripe/internal/cards"
+	"github.com/youngjae-lim/go-stripe/internal/models"
 )
 
 type stripePayload struct {
@@ -14,8 +16,14 @@ type stripePayload struct {
 	Amount        string `json:"amount"`
 	PaymentMethod string `json:"payment_method"`
 	Email         string `json:"email"`
+	CardBrand     string `json:"card_brand"`
+	ExpiryMonth   int    `json:"expiry_month"`
+	ExpiryYear    int    `json:"expiry_year"`
 	LastFour      string `json:"last_four"`
 	PriceID       string `json:"price_id"`
+	ProductID     string `json:"product_id"`
+	FirstName     string `json:"first_name"`
+	LastName      string `json:"last_name"`
 }
 
 type jsonResponse struct {
@@ -98,6 +106,7 @@ func (app *application) GetWidgetByID(w http.ResponseWriter, r *http.Request) {
 	w.Write(out)
 }
 
+// SubscribeToPlan handles creating a new customer and subscribing to plan
 func (app *application) SubscribeToPlan(w http.ResponseWriter, r *http.Request) {
 	var payload stripePayload
 
@@ -116,28 +125,91 @@ func (app *application) SubscribeToPlan(w http.ResponseWriter, r *http.Request) 
 		Currency: payload.Currency,
 	}
 
+	okay := true
+	var subscription *stripe.Subscription
+	txnMsg := "Transaction successful"
+
 	// create a new stripe customer
 	stripeCustomer, msg, err := card.CreateCustomer(payload.PaymentMethod, payload.Email)
 	if err != nil {
 		app.errorLog.Println(err)
-		return
+		okay = false
+		txnMsg = msg
 	}
 
-	// subscribe the customer to plan and get its id
-	subscriptionID, err := card.SubscribeToPlan(stripeCustomer, payload.PriceID, payload.Email, payload.LastFour, "")
-	if err != nil {
-		app.errorLog.Println(err)
-		return
+	// execute SubscribeToPlan only if creating a customer is successful
+	if okay {
+		// subscribe the customer to plan and get its id
+		subscription, err = card.SubscribeToPlan(stripeCustomer, payload.PriceID, payload.Email, payload.LastFour, "")
+		if err != nil {
+			app.errorLog.Println(err)
+			okay = false
+			txnMsg = "Error subscribing a new customer"
+		}
+
+		app.infoLog.Println("subscription id is", subscription.ID)
 	}
 
-	app.infoLog.Println("subscription id is", subscriptionID)
+	// if both creating a new customer and subscribing went throuhg,
+	// we will save the customer, transaction, and order to the database
+	if okay {
+		// get a widget id
+		productID, _ := strconv.Atoi(payload.ProductID)
 
-	okay := true
-	// msg := ""
+		// create a new customer
+		customer := models.Customer{
+			FirstName: payload.FirstName,
+			LastName:  payload.LastName,
+			Email:     payload.Email,
+		}
+
+		// save the customer
+		customerID, err := app.SaveCustomer(customer)
+		if err != nil {
+			app.errorLog.Println(err)
+			return
+		}
+
+		// create a new transaction
+		amount, _ := strconv.Atoi(payload.Amount)
+
+		txn := models.Transaction{
+			Amount:              amount,
+			Currency:            "usd",
+			LastFour:            payload.LastFour,
+			TransactionStatusID: 2,
+			ExpiryMonth:         payload.ExpiryMonth,
+			ExpiryYear:          payload.ExpiryYear,
+		}
+
+		// save the transaction
+		txnID, err := app.SaveTransaction(txn)
+		if err != nil {
+			app.errorLog.Println(err)
+			return
+		}
+
+		// create a new order
+		order := models.Order{
+			WidgetID:      productID,
+			TransactionID: txnID,
+			CustomerID:    customerID,
+			StatusID:      1,
+			Quantity:      1, // TODO: hardcoded as 1 for now
+			Amount:        amount,
+		}
+
+		// save the order
+		_, err = app.SaveOrder(order)
+		if err != nil {
+			app.errorLog.Println(err)
+			return
+		}
+	}
 
 	resp := jsonResponse{
 		OK:      okay,
-		Message: msg,
+		Message: txnMsg,
 	}
 
 	out, err := json.MarshalIndent(resp, "", "    ")
@@ -148,4 +220,37 @@ func (app *application) SubscribeToPlan(w http.ResponseWriter, r *http.Request) 
 
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(out)
+}
+
+// SaveCustomer saves a customer and returns its id
+func (app *application) SaveCustomer(customer models.Customer) (int, error) {
+	id, err := app.DB.InsertCustomer(customer)
+	if err != nil {
+		app.errorLog.Println(err)
+		return 0, err
+	}
+
+	return id, nil
+}
+
+// SaveTransaction saves a transaction and returns its id
+func (app *application) SaveTransaction(txn models.Transaction) (int, error) {
+	id, err := app.DB.InsertTransaction(txn)
+	if err != nil {
+		app.errorLog.Println(err)
+		return 0, err
+	}
+
+	return id, nil
+}
+
+// SaveOrder saves an order and returns its id
+func (app *application) SaveOrder(order models.Order) (int, error) {
+	id, err := app.DB.InsertOrder(order)
+	if err != nil {
+		app.errorLog.Println(err)
+		return 0, err
+	}
+
+	return id, nil
 }

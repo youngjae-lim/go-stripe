@@ -101,9 +101,9 @@ func (c *Card) CreateCustomer(pm, email string) (*stripe.Customer, string, error
 	return cust, "", nil
 }
 
-// SubscribeToPlan subscribes a customer to a plan and return its id
+// SubscribeToPlan subscribes a customer to a plan and returns *stripe.Subscription
 // https://stripe.com/docs/api/subscriptions/create
-func (c *Card) SubscribeToPlan(cust *stripe.Customer, price, email, last4, cardType string) (string, error) {
+func (c *Card) SubscribeToPlan(cust *stripe.Customer, price, email, last4, cardType string) (*stripe.Subscription, error) {
 	stripeCustomerID := cust.ID
 	items := []*stripe.SubscriptionItemsParams{
 		{Price: stripe.String(price)},
@@ -119,10 +119,10 @@ func (c *Card) SubscribeToPlan(cust *stripe.Customer, price, email, last4, cardT
 	params.AddExpand("latest_invoice.payment_intent")
 	subscription, err := sub.New(params)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	return subscription.ID, nil
+	return subscription, nil
 }
 
 // https://stripe.com/docs/api/errors/handling
