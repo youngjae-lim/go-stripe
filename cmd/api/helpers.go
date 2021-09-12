@@ -8,7 +8,7 @@ import (
 )
 
 // WriteJSON writes arbitrary data out as JSON
-func (app *application) WriteJSON(w http.ResponseWriter, status int, data interface{}, headers ...http.Header) error {
+func (app *application) writeJSON(w http.ResponseWriter, status int, data interface{}, headers ...http.Header) error {
 	out, err := json.MarshalIndent(data, "", "\t")
 	if err != nil {
 		return err
@@ -28,7 +28,7 @@ func (app *application) WriteJSON(w http.ResponseWriter, status int, data interf
 }
 
 // ReadJSON reads arbitrary JSON into data
-func (app *application) ReadJSON(w http.ResponseWriter, r *http.Request, data interface{}) error {
+func (app *application) readJSON(w http.ResponseWriter, r *http.Request, data interface{}) error {
 	maxBytes := 1048576
 
 	r.Body = http.MaxBytesReader(w, r.Body, int64(maxBytes))
@@ -63,6 +63,23 @@ func (app *application) badRequest(w http.ResponseWriter, r *http.Request, err e
 
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(out)
+
+	return nil
+}
+
+func (app *application) invalidCredentials(w http.ResponseWriter) error {
+	var payload struct {
+		Error   bool   `json:"error"`
+		Message string `json:"message"`
+	}
+
+	payload.Error = true
+	payload.Message = "invalid authentication credentials"
+
+	err := app.writeJSON(w, http.StatusUnauthorized, payload)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

@@ -261,11 +261,25 @@ func (app *application) CreateAuthToken(w http.ResponseWriter, r *http.Request) 
 		Password string `json:"password"`
 	}
 
-	err := app.ReadJSON(w, r, &userInput)
+	err := app.readJSON(w, r, &userInput)
 	if err != nil {
 		app.badRequest(w, r, err)
 		return
 	}
+
+	// get the user from database by email; send an error if the email is not valid
+	user, err := app.DB.GetUserByEmail(userInput.Email)
+	if err != nil {
+		app.invalidCredentials(w)
+		return
+	}
+
+	// validate the password
+	// send an error if the password is not valid
+
+	// generate a token
+
+	// send a response
 
 	var payload struct {
 		Error   bool   `json:"error"`
@@ -274,5 +288,5 @@ func (app *application) CreateAuthToken(w http.ResponseWriter, r *http.Request) 
 	payload.Error = false
 	payload.Message = "Success"
 
-	_ = app.WriteJSON(w, http.StatusOK, payload)
+	_ = app.writeJSON(w, http.StatusOK, payload)
 }
