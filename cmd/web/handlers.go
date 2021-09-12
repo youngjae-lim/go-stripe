@@ -331,3 +331,10 @@ func (app *application) BronzePlanReceipt(w http.ResponseWriter, r *http.Request
 		app.errorLog.Println(err)
 	}
 }
+
+func (app *application) LoginPage(w http.ResponseWriter, r *http.Request) {
+	// render the template
+	if err := app.renderTemplate(w, r, "login", &templateData{}); err != nil {
+		app.errorLog.Println(err)
+	}
+}
