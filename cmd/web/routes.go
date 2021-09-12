@@ -25,6 +25,7 @@ func (app *application) routes() http.Handler {
 
 	// Monthly Subscription
 	mux.Get("/plans/bronze", app.BronzePlan)
+	mux.Get("/receipt/bronze", app.BronzePlanReceipt)
 
 	// File server for static assest
 	fileServer := http.FileServer(http.Dir("./static/"))

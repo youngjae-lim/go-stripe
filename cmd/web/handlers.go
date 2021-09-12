@@ -324,3 +324,10 @@ func (app *application) BronzePlan(w http.ResponseWriter, r *http.Request) {
 		app.errorLog.Println(err)
 	}
 }
+
+func (app *application) BronzePlanReceipt(w http.ResponseWriter, r *http.Request) {
+	// render the template
+	if err := app.renderTemplate(w, r, "subscription-receipt", &templateData{}); err != nil {
+		app.errorLog.Println(err)
+	}
+}
