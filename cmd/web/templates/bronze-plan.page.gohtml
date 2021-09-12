@@ -203,7 +203,7 @@ Bronze Plan
     } else {
       // construct to payload to be sent to the backend api
       let payload = {
-        plan_id: '{{$widget.PlanID}}',
+        price_id: '{{$widget.PriceID}}',
         payment_method: result.paymentMethod.id,
         email: document.getElementById('cardholder_email').value,
         last_four: result.paymentMethod.card.last4,

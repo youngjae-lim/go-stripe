@@ -1,2 +1,2 @@
 drop_column("widgets", "is_recurring")
-drop_column("widgets", "plan_id")
+drop_column("widgets", "price_id")

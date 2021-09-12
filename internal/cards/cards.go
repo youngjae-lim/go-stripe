@@ -101,12 +101,12 @@ func (c *Card) CreateCustomer(pm, email string) (*stripe.Customer, string, error
 	return cust, "", nil
 }
 
-// SubscribeToPlan subscribes a customer to a plan
+// SubscribeToPlan subscribes a customer to a plan and return its id
 // https://stripe.com/docs/api/subscriptions/create
-func (c *Card) SubscribeToPlan(cust *stripe.Customer, plan, email, last4, cardType string) (string, error) {
+func (c *Card) SubscribeToPlan(cust *stripe.Customer, price, email, last4, cardType string) (string, error) {
 	stripeCustomerID := cust.ID
 	items := []*stripe.SubscriptionItemsParams{
-		{Plan: stripe.String(plan)},
+		{Price: stripe.String(price)},
 	}
 
 	params := &stripe.SubscriptionParams{

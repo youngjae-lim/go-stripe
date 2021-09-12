@@ -15,7 +15,7 @@ type stripePayload struct {
 	PaymentMethod string `json:"payment_method"`
 	Email         string `json:"email"`
 	LastFour      string `json:"last_four"`
-	PlanID        string `json:"plan_id"`
+	PriceID       string `json:"price_id"`
 }
 
 type jsonResponse struct {
@@ -101,16 +101,39 @@ func (app *application) GetWidgetByID(w http.ResponseWriter, r *http.Request) {
 func (app *application) SubscribeToPlan(w http.ResponseWriter, r *http.Request) {
 	var payload stripePayload
 
+	// decode payload:
 	err := json.NewDecoder(r.Body).Decode(&payload)
 	if err != nil {
 		app.errorLog.Println(err)
 		return
 	}
 
-	app.infoLog.Println(payload)
+	app.infoLog.Println("payload is", payload)
+
+	card := cards.Card{
+		Secret:   app.config.stripe.secret,
+		Key:      app.config.stripe.key,
+		Currency: payload.Currency,
+	}
+
+	// create a new stripe customer
+	stripeCustomer, msg, err := card.CreateCustomer(payload.PaymentMethod, payload.Email)
+	if err != nil {
+		app.errorLog.Println(err)
+		return
+	}
+
+	// subscribe the customer to plan and get its id
+	subscriptionID, err := card.SubscribeToPlan(stripeCustomer, payload.PriceID, payload.Email, payload.LastFour, "")
+	if err != nil {
+		app.errorLog.Println(err)
+		return
+	}
+
+	app.infoLog.Println("subscription id is", subscriptionID)
 
 	okay := true
-	msg := ""
+	// msg := ""
 
 	resp := jsonResponse{
 		OK:      okay,
