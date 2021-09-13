@@ -5,6 +5,10 @@ Login
 {{ end }}
 
 {{define "content"}}
+
+<!-- Messages for Login Success/Failure -->
+<div class="alert alert-danger text-center d-none" id="login-messages"></div>
+
 <!-- Start of the Form -->
 <form
   action=""
@@ -55,6 +59,22 @@ Login
 
 {{define "js"}}
 <script>
+  const loginMessages = document.getElementById('login-messages')
+
+  function showLoginError(msg) {
+    loginMessages.classList.add('alert-danger')
+    loginMessages.classList.remove('alert-success')
+    loginMessages.classList.remove('d-none')
+    loginMessages.innerText = msg
+  }
+
+  function showLoginSuccess() {
+    loginMessages.classList.add('alert-success')
+    loginMessages.classList.remove('alert-danger')
+    loginMessages.classList.remove('d-none')
+    loginMessages.innerText = 'Login successful'
+  }
+
   function val() {
     // client-side form validation
     let form = document.getElementById('login_form')
@@ -84,8 +104,16 @@ Login
     // Make a POST request to the backend api to authenticate
     fetch('{{ .API }}/api/authenticate', requestOptions)
       .then((res) => res.json())
-      .then((res) => {
-        console.log(res)
+      .then((data) => {
+        console.log(data)
+
+        if (data.error === false) {
+          localStorage.setItem('token', data.authentication_token.token)
+          localStorage.setItem('token_expiry', data.authentication_token.expiry)
+          showLoginSuccess()
+        } else {
+          showLoginError(data.message)
+        }
       })
   }
 </script>
