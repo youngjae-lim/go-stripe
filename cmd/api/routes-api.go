@@ -24,6 +24,7 @@ func (app *application) routes() http.Handler {
 	mux.Post("/api/subscribe", app.SubscribeToPlan)
 
 	mux.Post("/api/authenticate", app.CreateAuthToken)
+	mux.Post("/api/is-authenticated", app.CheckAuthentication)
 
 	return mux
 }
