@@ -38,12 +38,12 @@
         </button>
         <div class="collapse navbar-collapse" id="navbarSupportedContent">
           <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+            <!-- Home link -->
             <li class="nav-item">
               <a class="nav-link active" aria-current="page" href="/">Home</a>
             </li>
-            <li class="nav-item">
-              <a class="nav-link" href="/virtual-terminal">Virtual Terminal</a>
-            </li>
+
+            <!-- drop-down menu: buy one widget, subscription -->
             <li class="nav-item dropdown">
               <a
                 class="nav-link dropdown-toggle"
@@ -57,16 +57,21 @@
               </a>
               <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
                 <li>
-                  <a class="dropdown-item" href="/widget/1"
-                    >Buy one widget</a
-                  >
+                  <a class="dropdown-item" href="/widget/1">Buy one widget</a>
                 </li>
-                <li><a class="dropdown-item" href="/plans/bronze">Subscription</a></li>
+                <li>
+                  <a class="dropdown-item" href="/plans/bronze">Subscription</a>
+                </li>
               </ul>
+            </li>
+
+            <!-- virtual terminal link: default - don't show the link -->
+            <li id="virtual-terminal-link" class="nav-item d-none">
+              <a class="nav-link" href="/virtual-terminal">Virtual Terminal</a>
             </li>
           </ul>
           <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
-            <li class="nav-item">
+            <li id="login-link" class="nav-item d-none">
               <a href="/login" class="nav-link">Login</a>
             </li>
           </ul>
@@ -85,10 +90,37 @@
       integrity="sha384-U1DAWAznBHeqEIlVSCgzq+c9gqGAJn5c/t99JyeKa9xxaYpSvHU5awsuZVVFIhvj"
       crossorigin="anonymous"
     ></script>
+
+    <script>
+      let loginLink = document.getElementById('login-link')
+      let virtualTerminalLink = document.getElementById('virtual-terminal-link')
+
+      document.addEventListener('DOMContentLoaded', function () {
+        if (localStorage.getItem('token') !== null) {
+          // change the login link to logout link
+          loginLink.innerHTML =
+            '<a href="#!" class="nav-link" onclick="logout()">Logout</a>'
+          // show the virtual terminal link
+          virtualTerminalLink.classList.remove('d-none')
+        } else {
+          // show the login link
+          loginLink.innerHTML = '<a href="/login" class="nav-link">Login</a>'
+        }
+        loginLink.classList.remove('d-none')
+      })
+
+      function logout() {
+        localStorage.removeItem('token')
+        localStorage.removeItem('token_expiry')
+        location.href = '/login'
+      }
+    </script>
   </body>
 
   {{block "js" .}}
 
-  {{ end }}
+  {{
+    end
+  }}
 </html>
 {{ end }}

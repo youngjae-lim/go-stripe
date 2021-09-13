@@ -108,9 +108,13 @@ Login
         console.log(data)
 
         if (data.error === false) {
+          // save the received token and its expiry to the browser's localStorage
           localStorage.setItem('token', data.authentication_token.token)
           localStorage.setItem('token_expiry', data.authentication_token.expiry)
+          // show login success message
           showLoginSuccess()
+          // redirect a logged-in user to the homepage
+          location.href = '/'
         } else {
           showLoginError(data.message)
         }
