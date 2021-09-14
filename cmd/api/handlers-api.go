@@ -362,3 +362,75 @@ func (app *application) CheckAuthentication(w http.ResponseWriter, r *http.Reque
 
 	_ = app.writeJSON(w, http.StatusOK, payload)
 }
+
+func (app *application) VirtualTerminalPaymentSucceeded(w http.ResponseWriter, r *http.Request) {
+	var txnData struct {
+		PaymentAmount   int    `json:"amount"`
+		PaymentCurrency string `json:"currency"`
+		FirstName       string `json:"first_name"`
+		LastName        string `json:"last_name"`
+		Email           string `json:"email"`
+		PaymentIntentID string `json:"payment_intent_id"`
+		PaymentMethodID string `json:"payment_method_id"`
+		BankReturnCode  string `json:"bank_return_code"`
+		ExpiryMonth     int    `json:"expiry_month"`
+		ExpiryYear      int    `json:"expiry_year"`
+		LastFour        string `json:"last_four"`
+	}
+
+	// read posted data
+	err := app.readJSON(w, r, &txnData)
+	if err != nil {
+		app.badRequest(w, r, err)
+		return
+	}
+
+	// create a card with a key and a secret
+	card := cards.Card{
+		Secret: app.config.stripe.secret,
+		Key:    app.config.stripe.key,
+	}
+
+	// Get the payment intent by payment intent id
+	pi, err := card.RetrievePaymentIntent(txnData.PaymentIntentID)
+	if err != nil {
+		app.badRequest(w, r, err)
+		return
+	}
+
+	// Get the payment method details by payment method id
+	pm, err := card.RetrievePaymentMethod(txnData.PaymentMethodID)
+	if err != nil {
+		app.badRequest(w, r, err)
+		return
+	}
+
+	// extract information from payment intent(pi) and payment method(pm)
+	txnData.BankReturnCode = pi.Charges.Data[0].ID
+	txnData.LastFour = pm.Card.Last4
+	txnData.ExpiryMonth = int(pm.Card.ExpMonth)
+	txnData.ExpiryYear = int(pm.Card.ExpYear)
+
+	// create a new transaction
+	txn := models.Transaction{
+		Amount:              txnData.PaymentAmount,
+		Currency:            txnData.PaymentCurrency,
+		LastFour:            txnData.LastFour,
+		BankReturnCode:      txnData.BankReturnCode,
+		TransactionStatusID: 2,
+		ExpiryMonth:         txnData.ExpiryMonth,
+		ExpiryYear:          txnData.ExpiryYear,
+		PaymentIntent:       txnData.PaymentIntentID,
+		PaymentMethod:       txnData.PaymentMethodID,
+	}
+
+	// save the transaction
+	_, err = app.SaveTransaction(txn)
+	if err != nil {
+		app.badRequest(w, r, err)
+		return
+	}
+
+	// write a response
+	app.writeJSON(w, http.StatusOK, txn)
+}

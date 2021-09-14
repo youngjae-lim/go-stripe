@@ -63,14 +63,14 @@ func (app *application) GetTransactionData(r *http.Request) (TransanctionData, e
 		Key:    app.config.stripe.key,
 	}
 
-	// Get the payment intent by payment id
+	// Get the payment intent by payment intent id
 	pi, err := card.RetrievePaymentIntent(paymentID)
 	if err != nil {
 		app.errorLog.Println(err)
 		return txnData, err
 	}
 
-	// Get the payment method details by payment id
+	// Get the payment method details by payment method id
 	pm, err := card.RetrievePaymentMethod(paymentMethod)
 	if err != nil {
 		app.errorLog.Println(err)
