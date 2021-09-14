@@ -363,6 +363,7 @@ func (app *application) CheckAuthentication(w http.ResponseWriter, r *http.Reque
 	_ = app.writeJSON(w, http.StatusOK, payload)
 }
 
+// VirtualTerminalPaymentSucceeded is a handler that takes a posted data from the frontend virtual terminal and saves its transaction to the transactions table in the database
 func (app *application) VirtualTerminalPaymentSucceeded(w http.ResponseWriter, r *http.Request) {
 	var txnData struct {
 		PaymentAmount   int    `json:"amount"`
@@ -424,7 +425,7 @@ func (app *application) VirtualTerminalPaymentSucceeded(w http.ResponseWriter, r
 		PaymentMethod:       txnData.PaymentMethodID,
 	}
 
-	// save the transaction
+	// save the transaction to the transactions table in the database
 	_, err = app.SaveTransaction(txn)
 	if err != nil {
 		app.badRequest(w, r, err)
