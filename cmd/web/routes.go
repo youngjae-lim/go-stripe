@@ -13,10 +13,17 @@ func (app *application) routes() http.Handler {
 	// Home
 	mux.Get("/", app.Home)
 
-	// Virtual Terminal
-	mux.Get("/virtual-terminal", app.VirtualTerminal)
-	mux.Post("/virtual-terminal-payment-succeeded", app.VirtualTerminalPaymentSucceeded)
-	mux.Get("/virtual-terminal-receipt", app.VirtualTerminalReceipt)
+	// Protected routes
+	mux.Route("/admin", func(mux chi.Router) {
+		mux.Use(app.Auth)
+
+		// Virtual Terminal
+		mux.Get("/virtual-terminal", app.VirtualTerminal)
+	})
+
+	// These are now taken care of by the backend api
+	// mux.Post("/virtual-terminal-payment-succeeded", app.VirtualTerminalPaymentSucceeded)
+	// mux.Get("/virtual-terminal-receipt", app.VirtualTerminalReceipt)
 
 	// Sell a Single Widget
 	mux.Get("/widget/{id}", app.ChargeOnce)
@@ -29,7 +36,7 @@ func (app *application) routes() http.Handler {
 
 	// auth routes
 	mux.Get("/login", app.LoginPage)
-	
+
 	// File server for static assest
 	fileServer := http.FileServer(http.Dir("./static/"))
 	mux.Handle("/static/*", http.StripPrefix("/static", fileServer))
