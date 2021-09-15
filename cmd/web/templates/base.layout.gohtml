@@ -114,8 +114,8 @@
         localStorage.removeItem('token')
         localStorage.removeItem('token_expiry')
 
-        // redirect a user to a login page
-        location.href = '/login'
+        // redirect a user to a logout page that will erase session data
+        location.href = '/logout'
       }
 
       function checkAuth() {

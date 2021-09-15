@@ -176,6 +176,7 @@ func (app *application) PaymentSucceeded(w http.ResponseWriter, r *http.Request)
 }
 
 // VirtualTerminalPaymentSucceeded displays the confirmation page for virtual terminal transaction
+// ! The functionality of VirtualTerminalPaymentSucceeded handler is moved into the backend
 func (app *application) VirtualTerminalPaymentSucceeded(w http.ResponseWriter, r *http.Request) {
 	// get the transaction data
 	txnData, err := app.GetTransactionData(r)
@@ -230,6 +231,7 @@ func (app *application) Receipt(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// ! The functionality of VirtualTerminalReceipt handler is moved into the backend
 func (app *application) VirtualTerminalReceipt(w http.ResponseWriter, r *http.Request) {
 	// retrieve receipt data from session
 	txn, ok := app.Session.Get(r.Context(), "receipt").(TransanctionData)
@@ -337,4 +339,34 @@ func (app *application) LoginPage(w http.ResponseWriter, r *http.Request) {
 	if err := app.renderTemplate(w, r, "login", &templateData{}); err != nil {
 		app.errorLog.Println(err)
 	}
+}
+
+func (app *application) PostLoginPage(w http.ResponseWriter, r *http.Request) {
+	app.Session.RenewToken(r.Context())
+
+	err := r.ParseForm()
+	if err != nil {
+		app.errorLog.Println(err)
+		return
+	}
+
+	email := r.Form.Get("email")
+	password := r.Form.Get("password")
+
+	id, err := app.DB.Authenticate(email, password)
+	if err != nil {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+
+	app.Session.Put(r.Context(), "userID", id)
+	http.Redirect(w, r, "/", http.StatusSeeOther)
+}
+
+// Logout destroys the exising session data and renews the session token, then redirects a user to a login page
+func (app *application) Logout(w http.ResponseWriter, r *http.Request) {
+	app.Session.Destroy(r.Context())
+	app.Session.RenewToken(r.Context())
+
+	http.Redirect(w, r, "/login", http.StatusSeeOther)
 }

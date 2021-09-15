@@ -259,6 +259,7 @@ func (app *application) SaveOrder(order models.Order) (int, error) {
 	return id, nil
 }
 
+// CreateAuthToken receives an email and a password from the frontend login form and verifies them. Once verified, a token will be generated and saved to the tokens table in the database and sent it back to the user
 func (app *application) CreateAuthToken(w http.ResponseWriter, r *http.Request) {
 	var userInput struct {
 		Email    string `json:"email"`
@@ -318,6 +319,7 @@ func (app *application) CreateAuthToken(w http.ResponseWriter, r *http.Request) 
 	_ = app.writeJSON(w, http.StatusOK, payload)
 }
 
+// authenticateToken validates a received token from a client and returns a associated user with the token.
 func (app *application) authenticateToken(r *http.Request) (*models.User, error) {
 	// retrieve a token from the client's http request header
 	authorizationHeader := r.Header.Get("Authorization")

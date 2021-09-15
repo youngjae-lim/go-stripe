@@ -9,6 +9,7 @@ func SessionLoad(next http.Handler) http.Handler {
 // Auth protects any routes from unauthorized access
 func (app *application) Auth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// note that userID is saved to the session when the login form is posted
 		if !app.Session.Exists(r.Context(), "userID") {
 			http.Redirect(w, r, "/login", http.StatusTemporaryRedirect)
 			return

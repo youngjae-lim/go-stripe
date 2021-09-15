@@ -75,6 +75,7 @@ func (m *DBModel) InsertToken(t *Token, u User) error {
 	return nil
 }
 
+// GetUserForToken returns a user matching a valid token
 func (m *DBModel) GetUserForToken(token string) (*User, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()

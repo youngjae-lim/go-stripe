@@ -21,7 +21,7 @@ func (app *application) routes() http.Handler {
 		mux.Get("/virtual-terminal", app.VirtualTerminal)
 	})
 
-	// These are now taken care of by the backend api
+	// ! These two routes are now taken care of by the backend api
 	// mux.Post("/virtual-terminal-payment-succeeded", app.VirtualTerminalPaymentSucceeded)
 	// mux.Get("/virtual-terminal-receipt", app.VirtualTerminalReceipt)
 
@@ -36,6 +36,8 @@ func (app *application) routes() http.Handler {
 
 	// auth routes
 	mux.Get("/login", app.LoginPage)
+	mux.Post("/login", app.PostLoginPage)
+	mux.Get("/logout", app.Logout)
 
 	// File server for static assest
 	fileServer := http.FileServer(http.Dir("./static/"))
