@@ -91,7 +91,7 @@ func main() {
 	}
 	defer conn.Close()
 
-	// set up session
+	// Initialize a new session manager and configure it to use MySQL as the session store
 	session = scs.New()
 	session.Lifetime = 24 * time.Hour
 	session.Store = mysqlstore.New(conn)

@@ -67,7 +67,9 @@
 
             <!-- virtual terminal link: default - don't show the link -->
             <li id="virtual-terminal-link" class="nav-item d-none">
-              <a class="nav-link" href="/admin/virtual-terminal">Virtual Terminal</a>
+              <a class="nav-link" href="/admin/virtual-terminal"
+                >Virtual Terminal</a
+              >
             </li>
           </ul>
           <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
@@ -96,13 +98,21 @@
       let virtualTerminalLink = document.getElementById('virtual-terminal-link')
 
       document.addEventListener('DOMContentLoaded', function () {
-        if (localStorage.getItem('token') !== null) {
+        const token_expiry = new Date(localStorage.getItem('token_expiry'))
+
+        if (
+          localStorage.getItem('token') !== null &&
+          token_expiry > Date.now()
+        ) {
           // change the login link to logout link
           loginLink.innerHTML =
             '<a href="#!" class="nav-link" onclick="logout()">Logout</a>'
           // show the virtual terminal link
           virtualTerminalLink.classList.remove('d-none')
         } else {
+          // clear the localStorage
+          localStorage.removeItem('token')
+          localStorage.removeItem('token_expiry')
           // show the login link
           loginLink.innerHTML = '<a href="/login" class="nav-link">Login</a>'
         }
