@@ -13,6 +13,7 @@ import (
 	"github.com/stripe/stripe-go/v72"
 	"github.com/youngjae-lim/go-stripe/internal/cards"
 	"github.com/youngjae-lim/go-stripe/internal/models"
+	"github.com/youngjae-lim/go-stripe/internal/urlsigner"
 )
 
 type stripePayload struct {
@@ -449,12 +450,33 @@ func (app *application) SendPasswordResetEmail(w http.ResponseWriter, r *http.Re
 		return
 	}
 
+	// verify that the posted email exists
+	_, err = app.DB.GetUserByEmail(payload.Email)
+	if err != nil {
+		var resp struct {
+			Error   bool   `json:"error"`
+			Message string `json:"message"`
+		}
+		resp.Error = true
+		resp.Message = "No matching email found on our system"
+		app.writeJSON(w, http.StatusAccepted, resp)
+		return
+	}
+
+	// construct a signed url for resetting a password
+	link := fmt.Sprintf("%s/reset-password?email=%s", app.config.frontend_url, payload.Email)
+
+	sign := urlsigner.Signer{
+		Secret: []byte(app.config.pwreset_secretkey),
+	}
+
+	signedLink := sign.GenerateTokenFromString(link)
+
 	var data struct {
 		Link string
 	}
 
-	// set a password reset link to be passed onto the email template
-	data.Link = "http://reset.password"
+	data.Link = signedLink
 
 	// send an email
 	err = app.SendMail("info@codingmunger.com", payload.Email, "Password Reset Request", "password-reset", data)
