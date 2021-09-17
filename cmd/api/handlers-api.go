@@ -453,7 +453,23 @@ func (app *application) SendPasswordResetEmail(w http.ResponseWriter, r *http.Re
 		Link string
 	}
 
+	// set a password reset link to be passed onto the email template
 	data.Link = "http://reset.password"
 
 	// send an email
+	err = app.SendMail("info@codingmunger.com", payload.Email, "Password Reset Request", "password-reset", data)
+	if err != nil {
+		app.errorLog.Println(err)
+		app.badRequest(w, r, err)
+		return
+	}
+
+	var resp struct {
+		Error   bool   `json:"error"`
+		Message string `json:"message"`
+	}
+
+	resp.Error = false
+
+	app.writeJSON(w, http.StatusCreated, resp)
 }
