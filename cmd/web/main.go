@@ -32,6 +32,8 @@ type config struct {
 		key    string
 		secret string
 	}
+	pwreset_secretkey string
+	frontend_url      string
 }
 
 type application struct {
@@ -71,6 +73,8 @@ func main() {
 	// parseTime=true enables the output type of DATE and DATETIME values to time.Time instead of []byte string
 	// tls=false disables TLS/SSL encrypted connection to the server
 	flag.StringVar(&cfg.db.dsn, "dsn", "youngjaelim:@tcp(localhost:3306)/widgets?parseTime=true&tls=false", "DSN")
+	flag.StringVar(&cfg.pwreset_secretkey, "pwreset_skey", "Test1234!", "password reset secret key")
+	flag.StringVar(&cfg.frontend_url, "frontend_url", "http://localhost:4000", "url to front end")
 
 	flag.Parse()
 

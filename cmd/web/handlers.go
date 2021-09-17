@@ -1,12 +1,14 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/youngjae-lim/go-stripe/internal/cards"
 	"github.com/youngjae-lim/go-stripe/internal/models"
+	"github.com/youngjae-lim/go-stripe/internal/urlsigner"
 )
 
 // Home displays a homepage
@@ -375,5 +377,22 @@ func (app *application) ForgotPassword(w http.ResponseWriter, r *http.Request) {
 	// render the template
 	if err := app.renderTemplate(w, r, "forgot-password", &templateData{}); err != nil {
 		app.errorLog.Println(err)
+	}
+}
+
+func (app *application) ShowResetPassword(w http.ResponseWriter, r *http.Request) {
+	theURL := r.RequestURI
+	testURL := fmt.Sprintf("%s%s", app.config.frontend_url, theURL)
+
+	signer := urlsigner.Signer{
+		Secret: []byte(app.config.pwreset_secretkey),
+	}
+
+	valid := signer.VerifyToken(testURL)
+
+	if valid {
+		w.Write([]byte("valid"))
+	} else {
+		w.Write([]byte("invalid"))
 	}
 }
