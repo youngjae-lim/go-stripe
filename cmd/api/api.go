@@ -24,6 +24,12 @@ type config struct {
 		key    string
 		secret string
 	}
+	smtp struct {
+		host     string
+		port     int
+		username string
+		password string
+	}
 }
 
 type application struct {
@@ -58,6 +64,9 @@ func main() {
 	// parseTime=true enables the output type of DATE and DATETIME values to time.Time instead of []byte string
 	// tls=false disables TLS/SSL encrypted connection to the server
 	flag.StringVar(&cfg.db.dsn, "dsn", "youngjaelim:@tcp(localhost:3306)/widgets?parseTime=true&tls=false", "DSN")
+	flag.StringVar(&cfg.smtp.host, "smtphost", "smtp.mailtrap.io", "smtp host")
+	flag.StringVar(&cfg.smtp.username, "smtpusername", "b407d9befe3e65", "smtp username")
+	flag.IntVar(&cfg.smtp.port, "smtpport", 587, "smtp port")
 
 	// parse the flags
 	flag.Parse()
@@ -65,6 +74,9 @@ func main() {
 	// key & secret are set in Makefile
 	cfg.stripe.key = os.Getenv("STRIPE_KEY")
 	cfg.stripe.secret = os.Getenv("STRIPE_SECRET")
+
+	// mailtrap.io password
+	cfg.smtp.password = os.Getenv("MAILTRAP_PASSWORD")
 
 	infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
 	errorLog := log.New(os.Stdout, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
