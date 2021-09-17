@@ -30,6 +30,8 @@ type config struct {
 		username string
 		password string
 	}
+	pwreset_secretkey string
+	frontend_url      string
 }
 
 type application struct {
@@ -67,6 +69,8 @@ func main() {
 	flag.StringVar(&cfg.smtp.host, "smtphost", "smtp.mailtrap.io", "smtp host")
 	flag.StringVar(&cfg.smtp.username, "smtpusername", "b407d9befe3e65", "smtp username")
 	flag.IntVar(&cfg.smtp.port, "smtpport", 587, "smtp port")
+	flag.StringVar(&cfg.pwreset_secretkey, "pwreset_skey", "Test1234!", "password reset secret key")
+	flag.StringVar(&cfg.frontend_url, "frontend_url", "http://localhost:4000", "url to front end")
 
 	// parse the flags
 	flag.Parse()
