@@ -276,7 +276,7 @@ func (m *DBModel) GetUserByEmail(email string) (User, error) {
 	return u, nil
 }
 
-// Authenticate 
+// Authenticate - verifies a user email and a password
 func (m *DBModel) Authenticate(email, password string) (int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -292,6 +292,7 @@ func (m *DBModel) Authenticate(email, password string) (int, error) {
 		return id, err
 	}
 
+	// compare the password from a user input to the hashed password in the database
 	err = bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
 	if err == bcrypt.ErrMismatchedHashAndPassword {
 		return 0, errors.New("incorrect password")
@@ -300,4 +301,17 @@ func (m *DBModel) Authenticate(email, password string) (int, error) {
 	}
 
 	return id, nil
+}
+
+func (m *DBModel) UpdatePasswordForUser(user User, hash string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	stmt := `update users set password = ? where id = ?`
+	_, err := m.DB.ExecContext(ctx, stmt, hash, user.ID)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
