@@ -8,17 +8,18 @@ Login
 
 <div class="row">
   <div class="col-md-6 offset-md-3">
+    {{if eq .IsAuthenticated 1}}
+    <!-- Message for already logged-in user -->
+    <div class="alert alert-success text-center" id="logged-in-already">
+      You are already logged in
+    </div>
+    {{else}}
     <!-- Messages for Login Success/Failure -->
     <div
       class="alert alert-danger text-center d-none"
       id="login-messages"
     ></div>
 
-    <!-- Message for already logged-in user -->
-    <div
-      class="alert alert-success text-center d-none"
-      id="logged-in-already"
-    ></div>
     <!-- Start of the Form -->
     <form
       action="/login"
@@ -71,6 +72,7 @@ Login
       </p>
     </form>
     <!-- End of the Form -->
+    {{ end }}
   </div>
 </div>
 
@@ -78,19 +80,6 @@ Login
 
 {{define "js"}}
 <script>
-  const token_expiry = new Date(localStorage.getItem('token_expiry'))
-
-  // check if a user is already logged in
-  if (localStorage.getItem('token') && token_expiry > Date.now()) {
-    // hide the login form
-    document.getElementById('login_form').classList.add('d-none')
-
-    // let a user know that he/she is already logged in
-    const alreadyLoggedIn = document.getElementById('logged-in-already')
-    alreadyLoggedIn.classList.remove('d-none')
-    alreadyLoggedIn.innerText = 'You are already logged in'
-  }
-
   const loginMessages = document.getElementById('login-messages')
 
   function showLoginError(msg) {

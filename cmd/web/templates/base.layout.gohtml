@@ -43,7 +43,7 @@
               <a class="nav-link active" aria-current="page" href="/">Home</a>
             </li>
 
-            <!-- drop-down menu: buy one widget, subscription -->
+            <!-- Public Dropdown Menu: buy one widget, subscription -->
             <li class="nav-item dropdown">
               <a
                 class="nav-link dropdown-toggle"
@@ -65,18 +65,61 @@
               </ul>
             </li>
 
-            <!-- virtual terminal link: default - don't show the link -->
-            <li id="virtual-terminal-link" class="nav-item d-none">
-              <a class="nav-link" href="/admin/virtual-terminal"
-                >Virtual Terminal</a
+            <!-- Admin Only Dropdown Menu -->
+            {{if eq .IsAuthenticated 1}}
+            <li class="nav-item dropdown">
+              <a
+                class="nav-link dropdown-toggle"
+                href="#"
+                id="navbarDropdown"
+                role="button"
+                data-bs-toggle="dropdown"
+                aria-expanded="false"
               >
+                Admin
+              </a>
+              <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                <li>
+                  <a class="dropdown-item" href="/admin/virtual-terminal"
+                    >Virtual Terminal</a
+                  >
+                </li>
+                <li><hr class="dropdown-divider" /></li>
+                <li>
+                  <a class="dropdown-item" href="/admin/all-sales">All Sales</a>
+                </li>
+                <li><hr class="dropdown-divider" /></li>
+                <li>
+                  <a class="dropdown-item" href="/admin/all-subscriptions"
+                    >All Subscriptions</a
+                  >
+                </li>
+                <li><hr class="dropdown-divider" /></li>
+                <li>
+                  <a class="dropdown-item" href="/logout" onclick="logout()"
+                    >Logout</a
+                  >
+                </li>
+              </ul>
+            </li>
+            {{
+              end
+            }}
+          </ul>
+
+          {{if eq .IsAuthenticated 1}}
+          <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+            <li id="logout-link" class="nav-item">
+              <a href="/logout" class="nav-link" onclick="logout()">Logout</a>
             </li>
           </ul>
+          {{else}}
           <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
-            <li id="login-link" class="nav-item d-none">
+            <li id="login-link" class="nav-item">
               <a href="/login" class="nav-link">Login</a>
             </li>
           </ul>
+          {{ end }}
         </div>
       </div>
     </nav>
@@ -94,38 +137,10 @@
     ></script>
 
     <script>
-      let loginLink = document.getElementById('login-link')
-      let virtualTerminalLink = document.getElementById('virtual-terminal-link')
-
-      document.addEventListener('DOMContentLoaded', function () {
-        const token_expiry = new Date(localStorage.getItem('token_expiry'))
-
-        if (
-          localStorage.getItem('token') !== null &&
-          token_expiry > Date.now()
-        ) {
-          // change the login link to logout link
-          loginLink.innerHTML =
-            '<a href="#!" class="nav-link" onclick="logout()">Logout</a>'
-          // show the virtual terminal link
-          virtualTerminalLink.classList.remove('d-none')
-        } else {
-          // clear the localStorage
-          localStorage.removeItem('token')
-          localStorage.removeItem('token_expiry')
-          // show the login link
-          loginLink.innerHTML = '<a href="/login" class="nav-link">Login</a>'
-        }
-        loginLink.classList.remove('d-none')
-      })
-
       function logout() {
         // clear the localStorage
         localStorage.removeItem('token')
         localStorage.removeItem('token_expiry')
-
-        // redirect a user to a logout page that will erase session data
-        location.href = '/logout'
       }
 
       function checkAuth() {
