@@ -17,8 +17,9 @@ func (app *application) routes() http.Handler {
 	mux.Route("/admin", func(mux chi.Router) {
 		mux.Use(app.Auth)
 
-		// Virtual Terminal
 		mux.Get("/virtual-terminal", app.VirtualTerminal)
+		mux.Get("/all-sales", app.AllSales)
+		mux.Get("/all-subscriptions", app.AllSubscriptions)
 	})
 
 	// ! These two routes are now taken care of by the backend api
