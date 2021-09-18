@@ -388,10 +388,17 @@ func (app *application) ShowResetPassword(w http.ResponseWriter, r *http.Request
 		Secret: []byte(app.config.pwreset_secretkey),
 	}
 
+	// verify the signed url with a token
 	valid := signer.VerifyToken(testURL)
-
 	if !valid {
 		app.errorLog.Println("Invalid url - tampering detected")
+		return
+	}
+
+	// check if the password reset link has not expired yet
+	expired := signer.IsExpired(testURL, 60)
+	if expired {
+		app.errorLog.Println("Password Reset Link Expired")
 		return
 	}
 
