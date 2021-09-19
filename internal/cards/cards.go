@@ -126,7 +126,7 @@ func (c *Card) SubscribeToPlan(cust *stripe.Customer, price, email, last4, cardT
 	return subscription, nil
 }
 
-// Refund -
+// Refund - refunds a charged amount
 // https://stripe.com/docs/refunds
 // https://stripe.com/docs/api/refunds/object
 func (c *Card) Refund(pi string, amount int) error {
@@ -142,6 +142,24 @@ func (c *Card) Refund(pi string, amount int) error {
 	if err != nil {
 		return err
 	}
+	return nil
+}
+
+// CancelSubscription - cancels a subscription
+// https://stripe.com/docs/billing/subscriptions/cancel
+// https://stripe.com/docs/api/subscriptions/cancel
+func (c *Card) CancelSubscription(si string) error {
+	stripe.Key = c.Secret
+
+	params := &stripe.SubscriptionParams{
+		CancelAtPeriodEnd: stripe.Bool(true),
+	}
+
+	_, err := sub.Update(si, params)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
