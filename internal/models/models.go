@@ -43,15 +43,18 @@ type Widget struct {
 
 // Order is the type for all orders
 type Order struct {
-	ID            int       `json:"id"`
-	WidgetID      int       `json:"widget_id"`
-	TransactionID int       `json:"transaction_id"`
-	CustomerID    int       `json:"customer_id"`
-	StatusID      int       `json:"status_id"`
-	Quantity      int       `json:"quantity"`
-	Amount        int       `json:"amount"`
-	CreatedAt     time.Time `json:"-"`
-	UpdatedAt     time.Time `json:"-"`
+	ID            int         `json:"id"`
+	WidgetID      int         `json:"widget_id"`
+	TransactionID int         `json:"transaction_id"`
+	CustomerID    int         `json:"customer_id"`
+	StatusID      int         `json:"status_id"`
+	Quantity      int         `json:"quantity"`
+	Amount        int         `json:"amount"`
+	CreatedAt     time.Time   `json:"-"`
+	UpdatedAt     time.Time   `json:"-"`
+	Widget        Widget      `json:"widget"`
+	Transaction   Transaction `json:"transation"`
+	Customer      Customer    `json:"customer"`
 }
 
 // Status is the type for order statuses
@@ -115,11 +118,11 @@ func (m *DBModel) GetWidget(id int) (Widget, error) {
 	var widget Widget
 
 	query := `select
-							id, name, description, inventory_level, price, coalesce(image, ''), is_recurring, price_id, created_at, updated_at
-						from
-							widgets
-						where
-							id = ?`
+				id, name, description, inventory_level, price, coalesce(image, ''), is_recurring, price_id, created_at, updated_at
+			from
+				widgets
+			where
+				id = ?`
 
 	row := m.DB.QueryRowContext(ctx, query, id)
 	err := row.Scan(
@@ -148,7 +151,7 @@ func (m *DBModel) InsertTransaction(txn Transaction) (int, error) {
 
 	stmt := `
 		insert into transactions
-						(amount, currency, last_four, bank_return_code, transaction_status_id, expiry_month, expiry_year, payment_intent, payment_method, created_at, updated_at)
+			(amount, currency, last_four, bank_return_code, transaction_status_id, expiry_month, expiry_year, payment_intent, payment_method, created_at, updated_at)
 		values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`
 
@@ -185,7 +188,7 @@ func (m *DBModel) InsertOrder(order Order) (int, error) {
 
 	stmt := `
 		insert into orders
-						(widget_id, transaction_id, customer_id, status_id, quantity, amount, created_at, updated_at)
+			(widget_id, transaction_id, customer_id, status_id, quantity, amount, created_at, updated_at)
 		values (?, ?, ?, ?, ?, ?, ?, ?)
 	`
 
@@ -219,7 +222,7 @@ func (m *DBModel) InsertCustomer(c Customer) (int, error) {
 
 	stmt := `
 		insert into customers
-						(first_name, last_name, email, created_at, updated_at)
+			(first_name, last_name, email, created_at, updated_at)
 		values (?, ?, ?, ?, ?)
 	`
 
@@ -252,11 +255,11 @@ func (m *DBModel) GetUserByEmail(email string) (User, error) {
 	var u User
 
 	query := `select
-							id, first_name, last_name, email, password, created_at, updated_at
-						from
-							users
-						where
-							email = ?
+				id, first_name, last_name, email, password, created_at, updated_at
+			from
+				users
+			where
+				email = ?
 	`
 
 	row := m.DB.QueryRowContext(ctx, query, email)
@@ -314,4 +317,69 @@ func (m *DBModel) UpdatePasswordForUser(user User, hash string) error {
 	}
 
 	return nil
+}
+
+func (m *DBModel) GetAllOrders() ([]*Order, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	var orders []*Order
+
+	query := `
+		select 	o.id, o.widget_id, o.transaction_id, o.customer_id,
+				o.status_id, o.quantity, o.amount, o.created_at, o.updated_at,
+				w.id, w.name,
+				t.id, t.amount, t.currency, t.last_four, t.expiry_month, t.expiry_year, t.payment_intent, t.bank_return_code,
+				c.id, c.first_name, c.last_name, c.email
+
+		from 	orders o
+				left join widgets w on (o.widget_id = w.id)
+				left join transactions t on (o.transaction_id = t.id)
+				left join customers c on (o.customer_id = c.id)
+
+		where 	w.is_recurring = 0
+
+		order by o.created_at desc
+		`
+
+	rows, err := m.DB.QueryContext(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var o Order
+		err := rows.Scan(
+			&o.ID,
+			&o.WidgetID,
+			&o.TransactionID,
+			&o.CustomerID,
+			&o.StatusID,
+			&o.Quantity,
+			&o.Amount,
+			&o.CreatedAt,
+			&o.UpdatedAt,
+			&o.Widget.ID,
+			&o.Widget.Name,
+			&o.Transaction.ID,
+			&o.Transaction.Amount,
+			&o.Transaction.Currency,
+			&o.Transaction.LastFour,
+			&o.Transaction.ExpiryMonth,
+			&o.Transaction.ExpiryYear,
+			&o.Transaction.PaymentIntent,
+			&o.Transaction.BankReturnCode,
+			&o.Customer.ID,
+			&o.Customer.FirstName,
+			&o.Customer.LastName,
+			&o.Customer.Email,
+		)
+		if err != nil {
+			return nil, err
+		}
+		orders = append(orders, &o)
+	}
+
+	return orders, nil
 }
