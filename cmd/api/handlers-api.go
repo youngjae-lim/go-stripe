@@ -187,6 +187,8 @@ func (app *application) SubscribeToPlan(w http.ResponseWriter, r *http.Request) 
 			TransactionStatusID: 2,
 			ExpiryMonth:         payload.ExpiryMonth,
 			ExpiryYear:          payload.ExpiryYear,
+			PaymentIntent:       subscription.ID,
+			PaymentMethod:       payload.PaymentMethod,
 		}
 
 		// save the transaction
