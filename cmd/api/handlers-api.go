@@ -630,3 +630,48 @@ func (app *application) RefundCharge(w http.ResponseWriter, r *http.Request) {
 
 	app.writeJSON(w, http.StatusOK, resp)
 }
+
+func (app *application) CancelSubscription(w http.ResponseWriter, r *http.Request) {
+	var subToCancel struct {
+		ID             int    `json:"id"`
+		SubscriptionID string `json:"subscription_id"`
+		Currency       string `json:"currency"`
+	}
+
+	// TODO: option to implement validation here
+
+	err := app.readJSON(w, r, &subToCancel)
+	if err != nil {
+		app.badRequest(w, r, err)
+		return
+	}
+
+	// create an card instance of Card type
+	card := cards.Card{
+		Secret:   app.config.stripe.secret,
+		Key:      app.config.stripe.key,
+		Currency: subToCancel.Currency,
+	}
+
+	err = card.CancelSubscription(subToCancel.SubscriptionID)
+	if err != nil {
+		app.badRequest(w, r, err)
+		return
+	}
+
+	// update the status_id in the orders table from '1 (cleared)' to '3 (cancelled)'
+	err = app.DB.UpdateOrderStatus(subToCancel.ID, 3)
+	if err != nil {
+		app.badRequest(w, r, errors.New("the subcription was cancelled, but the database could not be updated to indicate the cancelled status"))
+		return
+	}
+
+	var resp struct {
+		Error   bool   `json:"error"`
+		Message string `json:"message"`
+	}
+	resp.Error = false
+	resp.Message = "Subscription cancelled"
+
+	app.writeJSON(w, http.StatusOK, resp)
+}
