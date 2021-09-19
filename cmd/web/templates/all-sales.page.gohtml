@@ -15,6 +15,7 @@ All Sales
       <th>Customer</th>
       <th>Product</th>
       <th>Amount</th>
+      <th>Status</th>
     </tr>
   </thead>
   <tbody></tbody>
@@ -67,6 +68,14 @@ All Sales
             newCell = newRow.insertCell()
             item = document.createTextNode(cur)
             newCell.appendChild(item)
+
+            // Status
+            newCell = newRow.insertCell()
+            if (order.status_id != 1) {
+              newCell.innerHTML = `<span class="badge bg-danger">Refunded</span>`
+            } else {
+              newCell.innerHTML = `<span class="badge bg-success">Charged</span>`
+            }
           })
         } else {
           let newRow = tbody.insertRow()
