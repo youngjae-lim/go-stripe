@@ -23,24 +23,67 @@ All Sales
 
 {{define "js"}}
 <script>
-  let token = localStorage.getItem('token')
-  let tbody = document
-    .getElementById('sales-table')
-    .getElementsByTagName('tbody')[0]
+  document.addEventListener('DOMContentLoaded', function () {
+    let token = localStorage.getItem('token')
+    let tbody = document
+      .getElementById('sales-table')
+      .getElementsByTagName('tbody')[0]
 
-  const requestOptions = {
-    method: 'post',
-    headers: {
-      Accept: 'application/json',
-      'Content-Type': 'application/json',
-      Authorization: 'Bearer ' + token,
-    },
-  }
+    const requestOptions = {
+      method: 'post',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer ' + token,
+      },
+    }
 
-  fetch('{{ .API }}/api/admin/all-sales', requestOptions)
-    .then((resp) => resp.json())
-    .then(function (data) {
-      console.log(data)
+    // fetch all sales data from the backend api
+    fetch('{{ .API }}/api/admin/all-sales', requestOptions)
+      .then((resp) => resp.json())
+      .then(function (data) {
+        if (data) {
+          data.forEach(function (order) {
+            let newRow = tbody.insertRow()
+            let newCell = newRow.insertCell()
+
+            // Transaction
+            newCell.innerHTML = `<a href="/admin/sales/${order.id}">Order ${order.id}</a>`
+
+            // Customer
+            newCell = newRow.insertCell()
+            let item = document.createTextNode(
+              order.customer.last_name + ', ' + order.customer.first_name,
+            )
+            newCell.appendChild(item)
+
+            // Product
+            newCell = newRow.insertCell()
+            item = document.createTextNode(order.widget.name)
+            newCell.appendChild(item)
+
+            // Amount
+            let cur = formatCurrency(order.transaction.amount)
+            newCell = newRow.insertCell()
+            item = document.createTextNode(cur)
+            newCell.appendChild(item)
+          })
+        } else {
+          let newRow = tbody.insertRow()
+          let newCell = newRow.insertCell()
+
+          newCell.setAttribute('colspan', '4')
+          newCell.innerHTML = 'No sales data available'
+        }
+      })
+  })
+
+  function formatCurrency(amount) {
+    let c = parseFloat(amount / 100)
+    return c.toLocaleString('en-US', {
+      style: 'currency',
+      currency: 'USD',
     })
+  }
 </script>
 {{ end }}
