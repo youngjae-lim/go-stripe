@@ -634,7 +634,7 @@ func (app *application) RefundCharge(w http.ResponseWriter, r *http.Request) {
 func (app *application) CancelSubscription(w http.ResponseWriter, r *http.Request) {
 	var subToCancel struct {
 		ID             int    `json:"id"`
-		SubscriptionID string `json:"subscription_id"`
+		SubscriptionID string `json:"payment_intent"`
 		Currency       string `json:"currency"`
 	}
 
