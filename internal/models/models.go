@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"math"
 	"strings"
 	"time"
 
@@ -463,7 +464,7 @@ func (m *DBModel) GetAllOrdersPaginated(pageSize, currentPage int) ([]*Order, in
 		return nil, 0, 0, err
 	}
 
-	lastPage := totalRecords / pageSize
+	lastPage := int(math.Ceil(float64(totalRecords) / float64(pageSize)))
 
 	return orders, lastPage, totalRecords, nil
 }

@@ -20,15 +20,62 @@ All Sales
   </thead>
   <tbody></tbody>
 </table>
+
+<!-- paginator -->
+<nav>
+  <ul id="paginator" class="pagination">
+
+  </ul>
+</nav>
 {{ end }}
 
 {{define "js"}}
 <script>
-  document.addEventListener('DOMContentLoaded', function () {
+  let pageSize = 3
+  let currentPage = 1
+
+  function paginator(pages, curPage) {
+    let p = document.getElementById("paginator")
+
+    // previous page: <
+    let html = `<li class="page-item"><a href="#!" class="page-link pager" data-page="${curPage - 1}">&lt;</a></li>`
+
+    // page numbers
+    for (var i = 0; i < pages; i++) {
+      html += `<li class="page-item"><a href="#!" class="page-link pager" data-page="${i + 1}">${i + 1}</a></li>`
+    }
+
+    // next page: >
+    html += `<li class="page-item"><a href="#!" class="page-link pager" data-page="${curPage + 1}">&gt;</a></li>`
+
+    p.innerHTML = html
+
+    let pageBtns = document.getElementsByClassName('pager')
+    for (var j = 0; j < pageBtns.length; j++) {
+      pageBtns[j].addEventListener('click', function(evt) {
+        let desirePage = evt.target.getAttribute('data-page')
+        console.log('clicked, and data-page is', desirePage)
+        if ((desirePage > 0) && (desirePage <= pages)) {
+          console.log('would go to page', desirePage)
+          updateTable(pageSize, desirePage)
+        }
+      })
+    }
+  }
+
+  function updateTable(ps, cp) {
     let token = localStorage.getItem('token')
     let tbody = document
       .getElementById('sales-table')
       .getElementsByTagName('tbody')[0]
+
+    // initialize the innerHTML of the <tbody> tag before rendering the next page
+    tbody.innerHTML = ""
+
+    let body = {
+      page_size: parseInt(ps, 10),
+      current_page: parseInt(cp, 10),
+    }
 
     const requestOptions = {
       method: 'post',
@@ -37,14 +84,16 @@ All Sales
         'Content-Type': 'application/json',
         Authorization: 'Bearer ' + token,
       },
+      body: JSON.stringify(body)
     }
 
     // fetch all sales data from the backend api
     fetch('{{ .API }}/api/admin/all-sales', requestOptions)
       .then((resp) => resp.json())
       .then(function (data) {
-        if (data) {
-          data.forEach(function (order) {
+        if (data.orders) {
+          console.log(data.orders)
+          data.orders.forEach(function (order) {
             let newRow = tbody.insertRow()
             let newCell = newRow.insertCell()
 
@@ -77,14 +126,19 @@ All Sales
               newCell.innerHTML = `<span class="badge bg-success">Charged</span>`
             }
           })
+          paginator(data.last_page, data.current_page)
         } else {
           let newRow = tbody.insertRow()
           let newCell = newRow.insertCell()
 
-          newCell.setAttribute('colspan', '4')
+          newCell.setAttribute('colspan', '5')
           newCell.innerHTML = 'No sales data available'
         }
       })
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    updateTable(pageSize, currentPage)
   })
 
   function formatCurrency(amount) {

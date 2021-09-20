@@ -565,26 +565,24 @@ func (app *application) AllSales(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// get all paginated orders
-	// pageSize: 2, currentPage: 1 are hardcoded for now
-	// TODO: currentPage parameter should be dymically passed later
-	allSales, lastPage, totalRecodrs, err := app.DB.GetAllOrdersPaginated(2, 1)
+	allSales, lastPage, totalRecords, err := app.DB.GetAllOrdersPaginated(payload.PageSize, payload.CurrentPage)
 	if err != nil {
 		app.badRequest(w, r, err)
 		return
 	}
 
 	var resp struct {
-		Currentpage  int `json:"current_page"`
-		PageSize     int `json:"page_size"`
-		LastPage     int `json:"last_page"`
-		TotalRecodrs int `json:"total_records"`
-		Orders       []*models.Order
+		Currentpage  int             `json:"current_page"`
+		PageSize     int             `json:"page_size"`
+		LastPage     int             `json:"last_page"`
+		TotalRecords int             `json:"total_records"`
+		Orders       []*models.Order `json:"orders"`
 	}
 
-	resp.Currentpage = 1
+	resp.Currentpage = payload.CurrentPage
 	resp.PageSize = payload.PageSize
 	resp.LastPage = lastPage
-	resp.TotalRecodrs = totalRecodrs
+	resp.TotalRecords = totalRecords
 	resp.Orders = allSales
 
 	app.writeJSON(w, http.StatusOK, resp)
