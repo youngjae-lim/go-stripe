@@ -27,8 +27,47 @@ All Users
 
 {{define "js"}}
 <script>
-  let tbody = document
-    .getElementById('user-table')
-    .getElementsByTagName('tbody')[0]
+  document.addEventListener('DOMContentLoaded', function () {
+    let token = localStorage.getItem('token')
+    let tbody = document
+      .getElementById('user-table')
+      .getElementsByTagName('tbody')[0]
+
+    const requestOptions = {
+      method: 'get',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer ' + token,
+      },
+    }
+
+    // fetch all sales data from the backend api
+    fetch('{{ .API }}/api/admin/all-users', requestOptions)
+      .then((resp) => resp.json())
+      .then(function (data) {
+        console.log(data)
+        if (data) {
+          data.forEach(function (user) {
+            let newRow = tbody.insertRow()
+            let newCell = newRow.insertCell()
+
+            // User
+            newCell.innerHTML = `<a href="/admin/all-users/${user.id}">${user.last_name}, ${user.first_name}</a>`
+
+            // Email
+            newCell = newRow.insertCell()
+            let item = document.createTextNode(user.email)
+            newCell.appendChild(item)
+          })
+        } else {
+          let newRow = tbody.insertRow()
+          let newCell = newRow.insertCell()
+
+          newCell.setAttribute('colspan', '2')
+          newCell.innerHTML = 'No users data available'
+        }
+      })
+  })
 </script>
 {{ end }}
