@@ -103,7 +103,9 @@ Admin User
 
   document.addEventListener('DOMContentLoaded', function () {
     if (id !== '0') {
-      delBtn.classList.remove('d-none')
+      if (id !== '{{.UserID}}') {
+        delBtn.classList.remove('d-none')
+      }
 
       const requestOptions = {
         method: 'post',
