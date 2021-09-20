@@ -92,7 +92,6 @@ All Sales
       .then((resp) => resp.json())
       .then(function (data) {
         if (data.orders) {
-          console.log(data.orders)
           data.orders.forEach(function (order) {
             let newRow = tbody.insertRow()
             let newCell = newRow.insertCell()
