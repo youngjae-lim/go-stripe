@@ -750,3 +750,59 @@ func (app *application) OneUser(w http.ResponseWriter, r *http.Request) {
 
 	app.writeJSON(w, http.StatusOK, user)
 }
+
+// EditUser edits an existing user or adds a new user
+func (app *application) EditUser(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	userID, _ := strconv.Atoi(id)
+
+	var user models.User
+
+	err := app.readJSON(w, r, &user)
+	if err != nil {
+		app.badRequest(w, r, err)
+		return
+	}
+
+	if userID > 0 { // For an existing user, update the user record
+		err = app.DB.EditUser(user)
+		if err != nil {
+			app.badRequest(w, r, err)
+			return
+		}
+
+		if user.Password != "" {
+			newHash, err := bcrypt.GenerateFromPassword([]byte(user.Password), 12)
+			if err != nil {
+				app.badRequest(w, r, err)
+				return
+			}
+
+			err = app.DB.UpdatePasswordForUser(user, string(newHash))
+			if err != nil {
+				app.badRequest(w, r, err)
+				return
+			}
+		}
+
+	} else { // For a new user, simply add the user to the users table
+		newHash, err := bcrypt.GenerateFromPassword([]byte(user.Password), 12)
+		if err != nil {
+			app.badRequest(w, r, err)
+			return
+		}
+		err = app.DB.AddUser(user, string(newHash))
+		if err != nil {
+			app.badRequest(w, r, err)
+			return
+		}
+	}
+
+	var resp struct {
+		Error   bool   `json:"error"`
+		Message string `json:"message"`
+	}
+
+	resp.Error = false
+	app.writeJSON(w, http.StatusOK, resp)
+}

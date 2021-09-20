@@ -752,6 +752,7 @@ func (m *DBModel) GetOneUser(id int) (User, error) {
 	return u, nil
 }
 
+// EditUser updates the first name, the last name, and the email of a user
 func (m *DBModel) EditUser(u User) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -778,7 +779,7 @@ func (m *DBModel) EditUser(u User) error {
 	return nil
 }
 
-
+// AddUser adds a new user to the users table in the database
 func (m *DBModel) AddUser(u User, hash string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -802,6 +803,7 @@ func (m *DBModel) AddUser(u User, hash string) error {
 	return nil
 }
 
+// DeleteUser deletes a user from the users table in the database
 func (m *DBModel) DeleteUser(id int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
