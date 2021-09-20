@@ -64,7 +64,7 @@
     }
 
     // fetch a single sale data from the backend api
-    fetch('{{ .API }}/api/admin/get-sale/' + id, requestOptions)
+    fetch('{{ .API }}/api/admin/get-order/' + id, requestOptions)
       .then((resp) => resp.json())
       .then(function (data) {
         console.log(data)

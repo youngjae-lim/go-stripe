@@ -35,7 +35,8 @@ func (app *application) routes() http.Handler {
 		mux.Post("/virtual-terminal-succeeded", app.VirtualTerminalPaymentSucceeded)
 		mux.Post("/all-sales", app.AllSales)
 		mux.Post("/all-subscriptions", app.AllSubscriptions)
-		mux.Get("/get-sale/{id}", app.GetSale)
+		// this route works for getting an order for both general widget sales and subscriptions
+		mux.Get("/get-order/{id}", app.GetOrder)
 		mux.Post("/refund", app.RefundCharge)
 		mux.Post("/cancel-subscription", app.CancelSubscription)
 

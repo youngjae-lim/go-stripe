@@ -624,7 +624,7 @@ func (app *application) AllSubscriptions(w http.ResponseWriter, r *http.Request)
 	app.writeJSON(w, http.StatusOK, resp)
 }
 
-func (app *application) GetSale(w http.ResponseWriter, r *http.Request) {
+func (app *application) GetOrder(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	orderID, _ := strconv.Atoi(id)
 
