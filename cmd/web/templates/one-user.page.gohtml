@@ -106,6 +106,7 @@ Admin User
   let delBtn = document.getElementById('deleteBtn')
 
   document.addEventListener('DOMContentLoaded', function () {
+    // if not adding a user (i.e., if editing a user)
     if (id !== '0') {
       if (id !== '{{.UserID}}') {
         delBtn.classList.remove('d-none')
@@ -133,6 +134,7 @@ Admin User
     }
   })
 
+  // onclick handler for 'Save Changes' button
   function val() {
     // client-side form validation
     let form = document.getElementById('user_form')
@@ -194,7 +196,26 @@ Admin User
       cancelButtonColor: '#d33',
       confirmButtonText: 'Delete User',
     }).then((result) => {
-      console.log('would delete the user id', id)
+      if (result.isConfirmed) {
+        const requestOptions = {
+          method: 'POST',
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'appliction/json',
+            Authorization: 'Bearer ' + token,
+          },
+        }
+
+        fetch('{{.API}}/api/admin/all-users/delete/' + id, requestOptions)
+          .then(resp => resp.json())
+          .then(function(data) {
+            if (data.error) {
+              Swal.fire("Error: " + data.message)
+            } else {
+              location.href = '/admin/all-users'
+            }
+          })
+      }
     })
   })
 </script>
