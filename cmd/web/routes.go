@@ -12,6 +12,7 @@ func (app *application) routes() http.Handler {
 
 	// Home
 	mux.Get("/", app.Home)
+	mux.Get("/ws", app.WsEndPoint)
 
 	// Protected routes
 	mux.Route("/admin", func(mux chi.Router) {
