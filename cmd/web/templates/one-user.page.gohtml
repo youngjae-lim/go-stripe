@@ -67,7 +67,7 @@ Admin User
           >Confirm Password</label
         >
         <input
-          type="confirm_password"
+          type="password"
           class="form-control"
           id="confirm_password"
           name="confirm_password"
@@ -198,7 +198,7 @@ Admin User
     }).then((result) => {
       if (result.isConfirmed) {
         const requestOptions = {
-          method: 'POST',
+          method: 'DELETE',
           headers: {
             Accept: 'application/json',
             'Content-Type': 'appliction/json',
@@ -207,11 +207,19 @@ Admin User
         }
 
         fetch('{{.API}}/api/admin/all-users/delete/' + id, requestOptions)
-          .then(resp => resp.json())
-          .then(function(data) {
+          .then((resp) => resp.json())
+          .then(function (data) {
             if (data.error) {
-              Swal.fire("Error: " + data.message)
+              Swal.fire('Error: ' + data.message)
             } else {
+              let jsonData = {
+                action: 'deleteUser',
+                user_id: parseInt(id, 10),
+              }
+
+              // send the jsonData to the websocket server
+              socket.send(JSON.stringify(jsonData))
+
               location.href = '/admin/all-users'
             }
           })

@@ -94,10 +94,12 @@
                   >
                 </li>
                 <li><hr class="dropdown-divider" /></li>
-                <li><a class="dropdown-item" href="/admin/all-users">All Users</a></li>
+                <li>
+                  <a class="dropdown-item" href="/admin/all-users">All Users</a>
+                </li>
                 <li><hr class="dropdown-divider" /></li>
                 <li>
-                  <a class="dropdown-item" href="/logout" onclick="logout()"
+                  <a class="dropdown-item" href="#!" onclick="logout()"
                     >Logout</a
                   >
                 </li>
@@ -111,7 +113,7 @@
           {{if eq .IsAuthenticated 1}}
           <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
             <li id="logout-link" class="nav-item">
-              <a href="/logout" class="nav-link" onclick="logout()">Logout</a>
+              <a href="#!" class="nav-link" onclick="logout()">Logout</a>
             </li>
           </ul>
           {{else}}
@@ -138,10 +140,45 @@
     ></script>
 
     <script>
+
+      {{if eq .IsAuthenticated 1}}
+      let socket
+
+      document.addEventListener("DOMContentLoaded", function() {
+        socket = new WebSocket("ws://localhost:4000/ws")
+
+        socket.onopen = () => {
+          console.log("Successfully connected to websockets")
+        }
+
+        socket.onclose = event => {}
+        socket.onerror = error => {}
+
+        socket.onmessage = msg => {
+          console.log(msg)
+          let data = JSON.parse(msg.data)
+
+          // if the broadcast message from ws server has 'logout' action,
+          // and the user id matches the ws client's user id
+          // force the ws client to log out of the session
+          switch (data.action) {
+            case "logout":
+              if (data.user_id === {{.UserID}}) {
+                logout()
+              }
+              break
+            default:
+          }
+        }
+      })
+
+      {{end}}
+
       function logout() {
         // clear the localStorage
         localStorage.removeItem('token')
         localStorage.removeItem('token_expiry')
+        location.href = '/logout'
       }
 
       function checkAuth() {
