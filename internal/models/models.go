@@ -759,9 +759,9 @@ func (m *DBModel) EditUser(u User) error {
 
 	stmt := `
 		update 	users
-		set 	first_name = ?
-				last_name = ?
-				email = ?
+		set 	first_name = ?,
+				last_name = ?,
+				email = ?,
 				updated_at = ?
 		where 	id = ?
 	`
