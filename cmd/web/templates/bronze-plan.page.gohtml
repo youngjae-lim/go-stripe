@@ -46,6 +46,7 @@ Bronze Plan
       required=""
       autocomplete="first_name-new"
     />
+    <div id="first_name-help" class="valid-feedback"></div>
   </div>
 
   <!-- Cardholder Last Name field -->
@@ -235,20 +236,41 @@ Bronze Plan
       fetch('{{ .API }}/api/subscribe', requestOptions)
         .then((res) => res.json())
         .then(function (data) {
-          console.log(data)
-          // hide processing message
-          processing.classList.add('d-none')
-          showCardSuccess()
+          if (data.error === false) {
+            // hide processing message
+            processing.classList.add('d-none')
+            showCardSuccess()
 
-          // save some transaction info to sessionStorage to be used in the receipt
-          sessionStorage.first_name =
-            document.getElementById('first_name').value
-          sessionStorage.last_name = document.getElementById('last_name').value
-          sessionStorage.amount = '{{ formatCurrency $widget.Price }}'
-          sessionStorage.last_four = result.paymentMethod.card.last4
+            // save some transaction info to sessionStorage to be used in the receipt
+            sessionStorage.first_name =
+              document.getElementById('first_name').value
+            sessionStorage.last_name =
+              document.getElementById('last_name').value
+            sessionStorage.amount = '{{ formatCurrency $widget.Price }}'
+            sessionStorage.last_four = result.paymentMethod.card.last4
 
-          // redirect the page
-          location.href = '/receipt/bronze'
+            // redirect the page
+            location.href = '/receipt/bronze'
+          } else {
+            // remove the green outlines previously validated
+            document
+              .getElementById('charge_form')
+              .classList.remove('was-validated')
+
+            Object.entries(data.errors).forEach((error) => {
+              const [key, value] = error
+              console.log(`${key}: ${value}`)
+              document.getElementById(key).classList.add('is-invalid')
+              document
+                .getElementById(key + '-help')
+                .classList.remove('valid-feedback')
+              document
+                .getElementById(key + '-help')
+                .classList.add('invalid-feedback')
+              document.getElementById(key + '-help').innerText = value
+            })
+            showPayButton()
+          }
         })
     }
   }
