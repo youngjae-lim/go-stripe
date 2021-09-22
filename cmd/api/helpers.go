@@ -109,7 +109,7 @@ func (app *application) failedValidation(w http.ResponseWriter, r *http.Request,
 	}
 
 	payload.Error = true
-	payload.Message = "falid validation"
+	payload.Message = "failed validation"
 	payload.Errors = errors
 	app.writeJSON(w, http.StatusUnprocessableEntity, payload)
 }

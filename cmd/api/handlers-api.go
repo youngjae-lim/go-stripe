@@ -16,6 +16,7 @@ import (
 	"github.com/youngjae-lim/go-stripe/internal/encryption"
 	"github.com/youngjae-lim/go-stripe/internal/models"
 	"github.com/youngjae-lim/go-stripe/internal/urlsigner"
+	"github.com/youngjae-lim/go-stripe/internal/validator"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -137,7 +138,14 @@ func (app *application) SubscribeToPlan(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	app.infoLog.Println("payload is", payload)
+	// validate data
+	v := validator.New()
+	v.Check(len(payload.FirstName) > 1, "first_name", "must be at least 2 characters")
+
+	if !v.Valid() {
+		app.failedValidation(w, r, v.Errors)
+		return
+	}
 
 	card := cards.Card{
 		Secret:   app.config.stripe.secret,
