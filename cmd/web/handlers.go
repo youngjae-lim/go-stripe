@@ -106,6 +106,7 @@ func (app *application) GetTransactionData(r *http.Request) (TransanctionData, e
 	return txnData, nil
 }
 
+// Invoice is a json payload to be sent to invoice microservice
 type Invoice struct {
 	ID        int       `json:"id"`
 	Quantity  int       `json:"quantity"`

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -113,6 +114,18 @@ func (app *application) GetWidgetByID(w http.ResponseWriter, r *http.Request) {
 	w.Write(out)
 }
 
+// Invoice is a json payload to be sent to invoice microservice
+type Invoice struct {
+	ID        int       `json:"id"`
+	Quantity  int       `json:"quantity"`
+	Amount    int       `json:"amount"`
+	Product   string    `json:"product"`
+	FirstName string    `json:"first_name"`
+	LastName  string    `json:"last_name"`
+	Email     string    `json:"email"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
 // SubscribeToPlan handles creating a new customer and subscribing to plan
 func (app *application) SubscribeToPlan(w http.ResponseWriter, r *http.Request) {
 	var payload stripePayload
@@ -209,11 +222,29 @@ func (app *application) SubscribeToPlan(w http.ResponseWriter, r *http.Request) 
 		}
 
 		// save the order
-		_, err = app.SaveOrder(order)
+		orderID, err := app.SaveOrder(order)
 		if err != nil {
 			app.errorLog.Println(err)
 			return
 		}
+
+		// call invoice microservice
+		inv := Invoice{
+			ID:        orderID,
+			Amount:    order.Amount,
+			Product:   "Bronze Plan Monthly Subscription",
+			Quantity:  order.Quantity,
+			FirstName: payload.FirstName,
+			LastName:  payload.LastName,
+			Email:     payload.Email,
+			CreatedAt: time.Now(),
+		}
+
+		err = app.callInvoiceMicro(inv)
+		if err != nil {
+			app.errorLog.Println(err)
+		}
+
 	}
 
 	resp := jsonResponse{
@@ -229,6 +260,30 @@ func (app *application) SubscribeToPlan(w http.ResponseWriter, r *http.Request) 
 
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(out)
+}
+
+// callInvoiceMicro makes a POST request to invoice microservice
+func (app *application) callInvoiceMicro(inv Invoice) error {
+	url := "http://localhost:5000/invoice/create-and-send"
+	out, err := json.MarshalIndent(inv, "", "\t")
+	if err != nil {
+		return err
+	}
+
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(out))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	return nil
 }
 
 // SaveCustomer saves a customer and returns its id
