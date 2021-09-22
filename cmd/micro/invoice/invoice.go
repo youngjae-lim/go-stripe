@@ -70,6 +70,9 @@ func main() {
 		version:  version,
 	}
 
+	// create a invoices directory in the root of app if it does not exist
+	app.CreateDirIfNotExist("./invoices")
+
 	err := app.serve()
 	if err != nil {
 		app.errorLog.Println(err)
